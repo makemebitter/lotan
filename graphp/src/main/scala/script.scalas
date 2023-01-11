@@ -1,0 +1,31 @@
+// import net.liftweb.json._
+// import net.liftweb.json.Serialization.write
+// import net.liftweb.json.Serialization.read
+import upickle.default._
+import scala.io.Source._
+import org.apache.spark.graphx._
+// type VertexId = Long
+type GatherArrayType = Array[(VertexId, Array[Float])]
+type MapOfGradsRDDType = (VertexId, GatherArrayType)
+val lines = fromFile("../mapGrads_example.txt").getLines mkString
+val jobj = (0, 
+    Array(
+    (58886, Array(1.2, 3.4, 5.4)),
+    (65234, Array(2.244, 3.3244, 5.2224))
+    ))
+val jline = write(jobj)
+// "[0,[[8886,[1.2,3.4,5.4]],[65234,[2.244,3.3244,5.2224]]]]"
+val json_obj = read[MapOfGradsRDDType](lines)
+
+
+read[MapOfGradsRDDType](jline)
+read[(Int, Array[(Int, Array[Double])])](jline)
+
+
+val embobj = (0, Array(
+        (1, Array(1, 323.2323, 44.4)),
+        (3, Array(122, 444.2323, 445.4))
+    )
+)
+val embjson = write(embobj)
+// "[0,[[1,[1,323.2323,44.4]],[3,[122,444.2323,445.4]]]]"
