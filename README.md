@@ -6,7 +6,7 @@ The code and artifacts for our paper *Lotan: Bridging the Gap between GNNs and S
 
 Lotan is a distributed system working on top of Apache Spark and PyTorch DDP. Therefore, Spark `>= 3.2.0` and HDFS must be installed and enabled. We only tested Spark with 3.2.0 version, and compatibilities with other versions are unknown.
 
-It is highly recommended to put this project folder in an NFS or other shared filesystem accessible from the entire cluster. Further, key-less SSH must be set up in the cluster. There are a few good guides, for instance, [this one] (https://kb.rice.edu/page.php?id=108596).
+It is highly recommended to put this project folder in an NFS or other shared filesystem accessible from the entire cluster. Further, key-less SSH must be set up in the cluster. There are a few good guides, for instance, [this one](https://kb.rice.edu/page.php?id=108596).
 
 On the other hand, a `python >= 3.8` environment needs to be set up on every node; you can use the following:
 
