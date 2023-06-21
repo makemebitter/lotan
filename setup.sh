@@ -33,6 +33,15 @@ sudo service sysstat restart
 sudo apt-get install -y openjdk-8-jdk
 sudo update-java-alternatives --set /usr/lib/jvm/java-1.8.0-openjdk-amd64
 
+# jzmq
+git clone https://github.com/zeromq/jzmq.git
+cd jzmq/jzmq-jni
+./autogen.sh
+./configure
+sudo make install
+cd ..
+mvn install -Dgpg.skip=true -Dmaven.test.skip=true 
+
 
 # # blas
 # install_mkl
@@ -49,3 +58,4 @@ sudo update-alternatives --install /usr/lib/libblas.so libblas.so /usr/lib/x86_6
 
 sudo apt-get install -y msttcorefonts -qq
 sudo ldconfig
+
