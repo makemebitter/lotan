@@ -165,7 +165,7 @@ def get_main_parser():
         '--dist', action='store_true'
     )
     parser.add_argument(
-        '--size', type=int, default=8
+        '--size', type=int, default=2
     )
     parser.add_argument(
         '--verbose', type=int, default=2
@@ -175,6 +175,9 @@ def get_main_parser():
     )
     parser.add_argument(
         '--model', type=str, default='sage'
+    )
+    parser.add_argument(
+        '--master', type=str, default='master'
     )
     parser.add_argument(
         '--dataset', type=str, default='ogbn-products'

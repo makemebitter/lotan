@@ -131,6 +131,7 @@ class EdgeProperty(
 ) extends Serializable {}
 
 trait Constants {
+    val DEBUG = false
     val SEED = 2021
     val EDGE_FILE_PATH = "/mnt/nfs/ssd/lognormal/lognormal_edge.txt"
     val VERTEX_FILE_PATH = "/mnt/nfs/ssd/lognormal/lognormal_vertex.txt"
@@ -154,14 +155,9 @@ trait Constants {
     )
     val hosts = Seq(
         "10.10.1.1",
-        "10.10.1.2",
-        "10.10.1.3",
-        "10.10.1.4",
-        "10.10.1.5",
-        "10.10.1.6",
-        "10.10.1.7",
-        "10.10.1.8"
+        "10.10.1.2"
     )
+    val master = "spark://10.10.1.1:7077"
     type OptionMap = mMap[Symbol, Int]
 
 }

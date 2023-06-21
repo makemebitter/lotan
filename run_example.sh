@@ -18,11 +18,13 @@ lotan_dataset="2" # ogbn-arxiv
 xavier="True"
 leaky="True"
 batchnorm="False"
-model="gcn"
+model="gcn" # or "gin"
+size="2"
 epoch=10
-COMMON_OPTIONS="--lotan_model_batching --drill_down_mb_size 8 --drill_down_mb_below_batching_start 0 --model ${model} --model_batchnorm ${batchnorm} --model_xavier ${xavier} --model_leaky ${leaky}"
+# to enable model batching, change drill_down_mb_size to higher number
+COMMON_OPTIONS="--lotan_model_batching --drill_down_mb_size 1 --drill_down_mb_below_batching_start 0 --model ${model} --model_batchnorm ${batchnorm} --model_xavier ${xavier} --model_leaky ${leaky}"
 export num_layers=3
-bash run_mb.sh "" "$epoch" "" "${COMMON_OPTIONS}" "$num_layers"
+bash run_mb.sh "" "$epoch" "$size" "${COMMON_OPTIONS}" "$num_layers"
 
 
 

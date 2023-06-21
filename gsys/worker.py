@@ -39,6 +39,7 @@ import copy
 from collections import defaultdict
 from .nn import TORCH_DTYPE
 import gc
+DEBUG = False
 
 def batch_data_gen(incoming_mq, batch_size):
     # should be some termination criteria here
@@ -195,7 +196,7 @@ class PreBatchedWorker(IPCBase):
             backend = 'gloo'
         torch.distributed.init_process_group(
             backend=backend,
-            init_method='tcp://master:23456',
+            init_method='tcp://{}:23456'.format(self.args.master),
             rank=rank, world_size=self.args.size)
 
         logs("DDP Initialized: {}".format(torch.distributed.is_initialized()))
@@ -382,7 +383,8 @@ class PreBatchedWorker(IPCBase):
 
     def _mini_batch_forward(self, model, H_u, V, U, batch_indices, no_grad):
         H_u = torch.as_tensor(H_u, dtype=TORCH_DTYPE, device=self.device)
-        print("Torch Got: {}, Shape: {}".format(H_u, H_u.shape))
+        if DEBUG:
+            print("Torch Got: {}, Shape: {}".format(H_u, H_u.shape))
         H_u.requires_grad_()
 
         if no_grad is True:
@@ -589,7 +591,8 @@ class PreBatchedWorker(IPCBase):
             ward_name = "WARD_{}".format(direction)
             with logsc(ward_name, elapsed_time=True,
                        log_dict=self.ward_log, accumulate=True):
-                logs(data)
+                if DEBUG:
+                    logs(data)
                 self.data_preprocess(data)
                 if direction == "forward":
                     with logsc(
@@ -641,32 +644,6 @@ class PreBatchedWorker(IPCBase):
                                 self.cal_loss_and_backward(
                                     result, labels, train_mask, batch_indices)
 
-                            # labels = self.meta[batch_indices, 1].to(
-                            #     self.device)
-                            # train_mask = self.meta[batch_indices, 3].to(
-                            #     self.device)
-                            # loss = self.criterion(result, labels)
-                            # # logs(
-                            # #   "Batch raw loss: {}, sum: {}".format(
-                            # #   loss, loss.sum()))
-
-                            # masked_loss = loss * train_mask
-                            # # logs(
-                            # #   "Masked loss: {}, sum: {}".format(
-                            # #       masked_loss, masked_loss.sum()))
-
-                            # # scaling to make sure it mathematically
-                            # # equals single node execution
-                            # # / train_mask.sum()
-                            # #
-                            # fin_loss = \
-                            #     masked_loss.sum() / self.total_train_count \
-                            #     * self.args.size
-                            # self.curr_epoch_total_loss += fin_loss
-                            # logs("Batch loss: {}".format(
-                            #     fin_loss.detach().cpu().numpy()))
-                        # with logsc("BACKWARD", elapsed_time=True):
-                        #     fin_loss.backward()
 
                         # validation accuracy
                         with logsc("VALIDATION", elapsed_time=True):
@@ -794,10 +771,6 @@ class PreBatchedWorker(IPCBase):
                         gen, model, outgoing_mq,
                         first_layer=True, count_batches=True, layer_index=j)
 
-                # save the first layer keys
-                # keys = list(self.first_layer_cache.keys())
-                # with open('/local/keys.pickle', 'wb') as fp:
-                #     pickle.dump(keys, fp)
 
                 logs("First layer of first epoch finished")
             else:
@@ -839,7 +812,8 @@ class PreBatchedWorker(IPCBase):
                 logs(
                     "Finished, direction: {direction}, layer: {layer_idx}"
                     .format(**locals()))
-                logs(self.ward_log)
+                if DEBUG:
+                    logs(self.ward_log)
             if self.args.model_switch:
                 model = model.to("cpu")
 
@@ -858,16 +832,6 @@ class PreBatchedWorker(IPCBase):
 
             self.valid_acc_all[k] = valid_acc
             self.test_acc_all[k] = test_acc
-
-            # logs(
-            #     "valid total: {self.valid_total}, valid acc: {valid_acc}"
-            #     .format(**locals()))
-            # log_local_test_acc(
-            #     self.args.rank,
-            #     self.epoch, "valid", valid_acc, self.valid_total)
-            # logs(
-            #   "test total: {self.test_total}, test acc: {test_acc}"
-            #   .format(**locals()))
             log_local_test_acc(
                 self.args.rank,
                 self.epoch, "valid", valid_acc, self.valid_total[k], k)
@@ -890,9 +854,10 @@ class PreBatchedWorker(IPCBase):
         self.history[self.epoch]['valid'] = dict(self.valid_acc_all)
         self.history[self.epoch]['test'] = dict(self.test_acc_all)
         self.history[self.epoch]['runtime'] = self.ward_log
-        logs(
-            "Machine: {}, History: {}".format(
-                self.args.rank, dict(self.history)))
+        if DEBUG:
+            logs(
+                "Machine: {}, History: {}".format(
+                    self.args.rank, dict(self.history)))
         self.epoch += 1
         del self.layer_cache
         gc.collect()
@@ -944,109 +909,6 @@ class PreBatchedWorker(IPCBase):
                 for optim in self.optimizers:
                     optim.step()
                 gc.collect()
-                # self.optimizer.step()
-
-        # finished
-        # self.event.clear()
-
-        # process indefinitely
-
-        # first layer forward
-
-        # nbgen = self.nbgenerator(incoming_mq)
-        # model = self.models[0]
-        # while self.stage.value == 0:
-        #     self.forward(nbgen, model, outgoing_mq)
-            # data = next(nbgen)
-            # if data is not None:
-            #     (H_u, V), (ident, msg), batch_indices = \
-            #     self.mini_batch_forward(
-            #         data, model)
-            #     first_layer_cache[tuple(batch_indices)] = (H_u, V)
-            #     outgoing_mq.put((ident, msg))
-            #     total_batches += 1
-            #     vertices_processed += len(batch_indices)
-            #     logs(
-            #       "WORKER PROCESSED BATCHES: {total_batches}, VERTICES: {vertices_processed}".format(
-            #         **locals()))
-
-            # ident, datum = data
-            # logs(data)
-            # H_u, V, batch_indices = datum.H_u, datum.V, datum.unique_vs
-            # # H_u = torch.tensor(H_u, dtype=TORCH_DTYPE, requires_grad=True)
-            # H_u = torch.as_tensor(H_u, dtype=TORCH_DTYPE)
-            # H_u.requires_grad_()
-            # first_layer_cache[tuple(batch_indices)] = (H_u, V)
-            # with torch.no_grad():
-            #     result = layer_0(
-            #         None, H_u, None, batch_indices, V, None, None)
-            # json_objs = self.mini_batch_packed(batch_indices, result)
-            # msg = pickle.dumps(json_objs)
-            # outgoing_mq.put((ident, msg))
-            # total_batches += 1
-            # vertices_processed += len(batch_indices)
-            # logs("WORKER PROCESSED BATCHES: {total_batches}, VERTICES: {vertices_processed}".format(
-            #     **locals()))
-        # logs("First layer finished")
-
-        # second layer forward + backward
-        # gen = self.generator(incoming_mq)
-        # received = 0
-        # vertices_processed = 0
-        # while received < total_batches:
-        #     data = next(gen)
-        #     logs(data)
-        #     ident, datum = data
-        #     H_u, V, U, batch_indices = \
-        #       datum.H_u, datum.V, datum.U, datum.unique_vs
-        #     # print(H_u, V, U, batch_indices)
-        #     batch_size = len(batch_indices)
-        #     H_u = torch.as_tensor(H_u, dtype=TORCH_DTYPE)
-        #     H_u.requires_grad_()
-        #     result = layer_1(
-        #         None, H_u, None, batch_indices, V, None, None)
-
-        #     dummy_labels = torch.randint(num_classes, (batch_size, ))
-        #     loss = self.criterion(result, dummy_labels)
-        #     loss.backward()
-        #     # send back map of gradients
-        #     json_objs = self.mini_batch_packed_grad(
-        #         batch_indices, V, U, H_u.grad)
-        #     msg = pickle.dumps(json_objs)
-        #     outgoing_mq.put((ident, msg))
-        #     received += 1
-        #     vertices_processed += len(batch_indices)
-        #     logs(
-        #       "WORKER PROCESSED: {received}, VERTICES: {vertices_processed}"
-        #       .format(
-        #         **locals()))
-        # logs("Second layer forward + backward finished")
-
-        # logs(first_layer_cache.keys())
-        # # first layer backward
-        # gen = self.generator(incoming_mq)
-        # received = 0
-        # ident_set = set()
-        # while received < total_batches:
-        #     data = next(gen)
-        #     logs(data)
-        #     ident, datum = data
-        #     ident_set.add(ident)
-        #     grads, batch_indices = datum.grads, datum.unique_vs
-        #     (H_u, V) = first_layer_cache[tuple(batch_indices)]
-        #     H_v = layer_0(
-        #         None, H_u, None, batch_indices, V, None, None)
-        #     grads = torch.as_tensor(grads)
-        #     H_v.backward(grads)
-        #     received += 1
-        #     logs("WORKER PROCESSED: {received}".format(**locals()))
-        # logs("First layer backprop finished")
-        # msg = pickle.dumps(messages.ALL_FINISHED)
-        # logs("Sending ALL_FINISHED to Graph engine")
-        # for ident in list(ident_set):
-        #     outgoing_mq.put((ident, msg))
-        # optimizer.step()
-        # logs("One epoch finished")
 
 
 class MPDummyWorker(IPCBase):
@@ -1137,11 +999,13 @@ class PreBatchedWorkerSHM(PreBatchedWorker):
         batch_indices_32bit = batch_indices.astype(np.float32)
 
         local_arr = np.c_[batch_indices_32bit, rlist]
-        logs("Peek inside the return value: {}, shape: {}, dtype: {}".format(
-            local_arr[0], local_arr.shape, local_arr.dtype))
+        if DEBUG:
+            logs("Peek inside the return value: {}, shape: {}, dtype: {}".format(
+                local_arr[0], local_arr.shape, local_arr.dtype))
         local_arr_ids = batch_indices
-        logs("Peek inside the return value ids: {}, shape: {}, dtype: {}".format(
-            local_arr_ids, local_arr_ids.shape, local_arr_ids.dtype))
+        if DEBUG:
+            logs("Peek inside the return value ids: {}, shape: {}, dtype: {}".format(
+                local_arr_ids, local_arr_ids.shape, local_arr_ids.dtype))
 
         shm_mem_name = "{}_{}".format(self.ident, self.received)
         shm_mem_name_ids = "{}_{}_ids".format(self.ident, self.received)

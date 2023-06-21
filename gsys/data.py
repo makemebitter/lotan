@@ -176,7 +176,7 @@ class Dataset(object):
         self._dump_spark()
 
     @timeit_factory()
-    def dumpy_spark(self):
+    def dump_spark(self):
         if self.args.dataset == "ogbn-papers100M":
             self.ori_save_dir = self.args.save_dir
             self.ori_g = self.g
