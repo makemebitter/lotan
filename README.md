@@ -4,9 +4,9 @@ The code and artifacts for our paper *Lotan: Bridging the Gap between GNNs and S
 
 ## Prerequisites
 
-**Spark and HDFS: ** Lotan is a distributed system working on top of Apache Spark and PyTorch DDP. Therefore, Spark `>= 3.2.0` and HDFS must be installed and enabled. We only tested Spark with 3.2.0 version, and compatibilities with other versions are unknown.
+**Spark and HDFS:** Lotan is a distributed system working on top of Apache Spark and PyTorch DDP. Therefore, Spark `>= 3.2.0` and HDFS must be installed and enabled. We only tested Spark with 3.2.0 version, and compatibilities with other versions are unknown.
 
-**NFS and key-less SSH: ** It is highly recommended to put this project folder in an NFS or other shared filesystem accessible from the entire cluster. Further, key-less SSH must be set up in the cluster. There are a few good guides, for instance, [this one](https://kb.rice.edu/page.php?id=108596).
+**NFS and key-less SSH:** It is highly recommended to put this project folder in an NFS or other shared filesystem accessible from the entire cluster. Further, key-less SSH must be set up in the cluster. There are a few good guides, for instance, [this one](https://kb.rice.edu/page.php?id=108596).
 
 **Python, Java, and Scala:** On the other hand, a `python >= 3.8`  along with `jdk == 8` and `scala == 2.12` environment needs to be set up on every node; you can use the following:
 
@@ -40,7 +40,7 @@ sdk install scala 2.12.15
 sdk install sbt
 ```
 
-**Important**:
+**Important global vars**:
 
 Lotan requires each machine to be labeled with global variables; you need to run the following to give each host a permanent name and number:
 
@@ -104,7 +104,7 @@ The Lotan project comes in two parts: one part is in Scala using GraphX, and the
 pip install -e .
 ```
 
-**Scala part: **Compile the scala lib to .jar (this step is included in the bash script below, so you don't have to do this):
+**Scala part:** Compile the scala lib to .jar (this step is included in the bash script below, so you don't have to do this):
 
 ```bash
 cd graphp
