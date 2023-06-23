@@ -73,7 +73,7 @@ LOG_DIR="<log root directory, preferably on a NFS>/$TIMESTAMP"
 MODEL_DIR="<model checkpoint directory, preferably on a NFS>/$TIMESTAMP"
 ```
 
-Also modify the hardcoded hosts located in `graphp/src/main/scala/Constants`:
+Also modify the configurations located in `graphp/src/main/scala/Constants`:
 
 ```scala
 // Modify this to the list of IP addresses of your workers
