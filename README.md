@@ -1,12 +1,24 @@
 # Lotan
 
-The code and artifacts for our paper *Lotan: Bridging the Gap between GNNs and Scalable Graph Analytics Engines*.
+This repo contains the code and artifacts for our paper *Lotan: Bridging the Gap between GNNs and Scalable Graph Analytics Engines* published at VLDB 2023. Links: [Project Website](https://adalabucsd.github.io/cerebro.html) [Paper PDF](https://adalabucsd.github.io/papers/2023_Lotan_VLDB.pdf), [Tech Report](https://adalabucsd.github.io/papers/TR_2023_Lotan.pdf), [Blog Post](https://adalabucsd.github.io/research-blog/lotan.html).
+
+## Introduction
+
+<p align="center">
+  <img alt="A" src="./assets/bridging.png" width="45%">
+&nbsp; &nbsp; &nbsp; &nbsp;
+  <img alt="B" src="./assets/arch_v3.png" width="45%">
+</p>
+Lotan is a scalable distributed full-graph Graph Neural Network training system with the amazing scalability and capability of handling models on huge graphs with large embedding sizes, running deep 16-layer models, and huge models with 140M+ parameters, all without crashing (see our paper for details). Our system is built on top of existing graph analytical and deep learning systems, in contrast to the vast majority of custom-built GNN systems. We employ graph systems for graph challenges and DL systems for DL challenges. This divide-and-conquer approach can combine the benefits from both worlds and provide the **decoupling of graph and neural networks**, analogous to the famous **decoupling of compute and storage**. The graph and NN components can now scale independently of each other, allowing for much greater GNN model design freedom.
+
+This is the prototype we built based on Spark GraphX and PyTorch, with a feat of technical novelties and engineering efforts to make it as efficient and scalable as possible without modifying the codebase of either GraphX or PyTorch. Furthermore, such an architecture allows the user to run GNNs directly from their Graph DB, and the system can piggy pack all the useful functionalities such as fault tolerance, general data management capabilities, and transactions that a mature graph data system can offer. Check our paper to see the details of all the innovations, including Planner Optimization, GNN-centric Graph Partitioning, GNN Model Batching, and many more.
+
 
 ## Prerequisites
 
 **Spark and HDFS:** Lotan is a distributed system working on top of Apache Spark and PyTorch DDP. Therefore, Spark `>= 3.2.0` and HDFS must be installed and enabled. We only tested Spark with 3.2.0 version, and compatibilities with other versions are unknown.
 
-**NFS and key-less SSH:** It is highly recommended to put this project folder in an NFS or other shared filesystem accessible from the entire cluster. Further, key-less SSH must be set up in the cluster. There are a few good guides, for instance, [this one](https://kb.rice.edu/page.php?id=108596).
+**NFS and keyless SSH:** It is highly recommended to put this project folder in an NFS or other shared filesystem accessible from the entire cluster. Further, keyless SSH must be set up in the cluster. There are a few good guides, for instance, [this one](https://kb.rice.edu/page.php?id=108596).
 
 **Python, Java, and Scala:** On the other hand, a `python >= 3.8`  along with `jdk == 8` and `scala == 2.12` environment needs to be set up on every node; you can use the following:
 
