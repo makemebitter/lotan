@@ -98,7 +98,7 @@ class GraphPropMKII(
     var originalReverseGraph: GraphType = _
     var reverseGraph: GraphType = _
     val datasetDir = datasetBetterMap(pargs('dataset))
-    val base = "hdfs://master:9000/"
+    val base = HDFS_ADDRESS
     val verticesFile = base + "vertices"
     val edgesFile = base + "edges"
     val edgesRevFile = base + "edgesRev"

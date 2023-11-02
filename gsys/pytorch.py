@@ -41,6 +41,8 @@ import datetime
 #             rank=rank, world_size=args.size)
 
 
+
+# for DGL usage only
 def dist_init(args):
     try:
         rank = int(os.getenv('WORKER_NUMBER')) + 1

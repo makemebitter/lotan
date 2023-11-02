@@ -48,7 +48,7 @@ def get_args(pargs, no_stdout=False):
         args = arxiv_dataset()
     args = SimpleNamespace(**args._dict(), **pargs.__dict__)
     try:
-        rank = int(os.getenv('WORKER_NUMBER')) + 1
+        rank = int(os.getenv('WORKER_NUMBER'))
     except Exception:
         rank = 0
     args.rank = rank
