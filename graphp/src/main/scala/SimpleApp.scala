@@ -729,11 +729,13 @@ class ExpRunner(
 
                     }
                     val messages = this.forwardOverall(epoch, layerIDX)
-                    messages match {
-                        case First(x)  => x.take(10).foreach(println)
-                        case Second(x) => x.take(10).foreach(println)
-                        case Third(x)  => x.take(10).foreach(println)
-                        case Fourth(x) => x.take(10).foreach(println)
+                    if(DEBUG){
+                        messages match {
+                            case First(x)  => x.take(10).foreach(println)
+                            case Second(x) => x.take(10).foreach(println)
+                            case Third(x)  => x.take(10).foreach(println)
+                            case Fourth(x) => x.take(10).foreach(println)
+                        }
                     }
                     // gc
                     graphProp.resetCache(true)
@@ -1449,7 +1451,9 @@ class ExpRunner(
                         ret match {
                             case Right(x) => {
                                 this.graphProp.cacheRDD(x, "pipedback", "tmp")
-                                x.take(10).foreach(println)
+                                if (DEBUG){
+                                    x.take(10).foreach(println)
+                                }
                                 Fourth(x)
                             }
                             case Left(_) => throw new Exception("Not supposed to get here")
