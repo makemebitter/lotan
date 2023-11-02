@@ -26,6 +26,10 @@ This is the prototype we built based on Spark GraphX and PyTorch, with a feat of
 ```bash
 # install all debian packages
 bash setup.sh
+
+# add dynamic library path to spark workers
+echo "export LD_LIBRARY_PATH=/usr/local/lib" | tee -a $SPARK_HOME/conf/spark-env.sh
+
 # install all prepherial pythonlibs
 pip install -r requirements_master.txt
 
@@ -41,14 +45,16 @@ pip install torch-sparse -f https://data.pyg.org/whl/torch-1.10.2+cu113.html
 
 # dgl
 pip install dgl-cu113==0.9.1.post1 dglgo -f https://data.dgl.ai/wheels/repo.html
+
+
 ```
 
-Also, if you do not already have Scala and SBT, use the below.
+Also, if you do not already have Scala and SBT, use the following.
 
 ```bash
 # Sdk and scala
 curl -s "https://get.sdkman.io" | bash
-source "/home/projectadmin/.sdkman/bin/sdkman-init.sh"
+source ~/.sdkman/bin/sdkman-init.sh
 sdk install scala 2.12.15
 sdk install sbt
 ```
@@ -63,9 +69,10 @@ echo "WORKER_NAME=<name you give, eg: worker1>" | sudo tee -a /etc/environment
 source /etc/environment
 ```
 
-Last, modify the relevant constants in `runner_helper.sh`:
+Then, modify the relevant constants in `constants.sh`:
 
 ```bash
+SIZE=<number of computational nodes in the cluster>
 HOSTS=<path to a hosts file contains all worker nodes ip addresses, one ip per line>
 # the file should look like
 10.0.1.2
@@ -81,6 +88,8 @@ HOSTS_ALL=<same to above, except also with the master node ip>
 
 master_ip=<master node ip address>
 
+export LOTAN_NFS_ROOT="/mnt/lotan" # the directory of lotan repo on nfs
+
 LOG_DIR="<log root directory, preferably on a NFS>/$TIMESTAMP"
 
 MODEL_DIR="<model checkpoint directory, preferably on a NFS>/$TIMESTAMP"
@@ -89,7 +98,11 @@ MODEL_DIR="<model checkpoint directory, preferably on a NFS>/$TIMESTAMP"
 Also modify the configurations located in `graphp/src/main/scala/Constants`:
 
 ```scala
-// Modify this to the list of IP addresses of your workers
+// directory to lotan root
+val LOTAN_NFS_ROOT = "/mnt/lotan/"
+// modify this to be your spark master's ip
+val MASTER = "10.10.1.1"
+// modify this to the list of IP addresses of your workers
 val hosts = Seq(
         "10.10.1.1",
         "10.10.1.2",
@@ -100,9 +113,18 @@ val hosts = Seq(
         "10.10.1.7",
         "10.10.1.8"
     )
+// the full path to the python you are using
+val DGL_PY = "/mnt/env_dgl/bin/python3.8"
+```
 
-// modify this to be your spark master's ip and port
-val master = "spark://10.10.1.1:7077"
+(Optional), you can also modify the intermediate files store path in `gsys/constants.py:constants`. 
+
+```python
+class constants(Constants):
+    ...
+    DGL_DATASET_DIR = '/mnt/nfs/datasets'
+    NFS_ROOT = '/mnt/nfs/ssd'
+    ...
 ```
 
 
@@ -117,7 +139,7 @@ The Lotan project comes in two parts: one part is in Scala using GraphX, and the
 pip install -e .
 ```
 
-**Scala part:** Compile the scala lib to .jar (this step is included in the bash script below, so you don't have to do this):
+**Scala part:** Compile the scala lib to .jar (this step is included in the bash script below, so you don't actually have to do this):
 
 ```bash
 cd graphp
@@ -135,7 +157,6 @@ Configure a few system parameters in `run_mb.sh`:
 spark_worker_cores=<each cluster node's number of CPU cores>
 numEParts=<number of edge partitions in graphx>
 numVParts=<number of vertex partitions>
-numMachines=<number of machines in the cluster>
 ```
 Set alias to `python`:
 
@@ -168,7 +189,7 @@ Full usage of the `run_mb.sh` script:
 ```bash
 bash run_mb.sh <optional log root> <num of epochs to train> <num of workers> <model-related configs> <number of model layers>
 
-For the <model-related configs>, refer to gsys/all_args.py. These configs include 
+For the <model-related configs>, refer to gsys/all_args.py.
 ```
 
 ### Use your own dataset
