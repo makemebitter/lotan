@@ -174,7 +174,7 @@ def get_main_parser():
         '--dist', action='store_true'
     )
     parser.add_argument(
-        '--size', type=int, default=8
+        '--size', type=int, default=2
     )
     parser.add_argument(
         '--verbose', type=int, default=2

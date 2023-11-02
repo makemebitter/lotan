@@ -664,33 +664,6 @@ class PreBatchedWorker(IPCBase):
                                 self.cal_loss_and_backward(
                                     result, labels, train_mask, batch_indices)
 
-                            # labels = self.meta[batch_indices, 1].to(
-                            #     self.device)
-                            # train_mask = self.meta[batch_indices, 3].to(
-                            #     self.device)
-                            # loss = self.criterion(result, labels)
-                            # # logs(
-                            # #   "Batch raw loss: {}, sum: {}".format(
-                            # #   loss, loss.sum()))
-
-                            # masked_loss = loss * train_mask
-                            # # logs(
-                            # #   "Masked loss: {}, sum: {}".format(
-                            # #       masked_loss, masked_loss.sum()))
-
-                            # # scaling to make sure it mathematically
-                            # # equals single node execution
-                            # # / train_mask.sum()
-                            # #
-                            # fin_loss = \
-                            #     masked_loss.sum() / self.total_train_count \
-                            #     * self.args.size
-                            # self.curr_epoch_total_loss += fin_loss
-                            # logs("Batch loss: {}".format(
-                            #     fin_loss.detach().cpu().numpy()))
-                        # with logsc("BACKWARD", elapsed_time=True):
-                        #     fin_loss.backward()
-
                         # validation accuracy
                         with logsc("VALIDATION", elapsed_time=True):
                             self.validation(
