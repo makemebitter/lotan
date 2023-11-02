@@ -268,7 +268,7 @@ object IOObjSparse extends IOBase[SparseVector[Float]] {
     }
 }
 
-object ByteIOObj extends TypesMKII {
+object ByteIOObj extends TypesMKII with Constants {
     def tokenize(command: String): Seq[String] = {
         val buf = new ArrayBuffer[String]
         val tok = new StringTokenizer(command)
@@ -539,7 +539,7 @@ object ByteIOObj extends TypesMKII {
         sparse: Boolean = false
     ): Either[RDD[(VertexId, EmbType)], RDD[(VertexId, EmbSparseType)]] = {
         var baseName =
-            "./pipe.py --io_type byte --ipc_type shm --worker_type prebatch_worker"
+            DGL_PY + " -u pipe.py --io_type byte --ipc_type shm --worker_type prebatch_worker"
 
         rdd match {
             case Right(x) => baseName += " --sparse"
@@ -646,7 +646,7 @@ class ExpRunner(
     val miniBatchSize = pargs('miniBatchSize)
 
     var baseCMD =
-        s"./pipe.py --worker_type prebatch_worker --mini_batch_size $miniBatchSize"
+        DGL_PY + s" -u ./pipe.py --worker_type prebatch_worker --mini_batch_size $miniBatchSize"
 
     baseCMD = baseCMD + " --io_type"
     baseCMD = if (pargs('ioType) == 0) {
