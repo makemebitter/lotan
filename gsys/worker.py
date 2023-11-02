@@ -196,9 +196,12 @@ class PreBatchedWorker(IPCBase):
             backend = 'nccl'
         else:
             backend = 'gloo'
+        logs(
+            "DDP Initializing ... Rank: {}, World Size: {}".format(
+                rank, self.args.size))
         torch.distributed.init_process_group(
             backend=backend,
-            init_method='tcp://master:23456',
+            init_method='tcp://{}:23456'.format(self.args.master),
             rank=rank, world_size=self.args.size)
 
         logs("DDP Initialized: {}".format(torch.distributed.is_initialized()))

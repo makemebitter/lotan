@@ -686,19 +686,14 @@ class ExpRunner(
         distScriptNameForbackward + " --sparse"
 
     def train(): Unit = {
-        graphProp.sc.addFile("/mnt/nfs/gsys/gsys/pipe.py")
-        // graphProp.sc.addFile("/mnt/nfs/gsys/gsys/__init__.py")
-        // graphProp.sc.addFile("/mnt/nfs/gsys/gsys/constants.py")
-
-        // val baseScriptCmd =
-        //     s"./pipe.py --worker_type prebatch_worker --mini_batch_size $miniBatchSize --io_type raw_string --ipc_type shm"
-        // var distScriptName = baseScriptCmd
-
-        // var distScriptNameGrad = distScriptName + " --messenger_grad"
+        graphProp.sc.addFile(LOTAN_NFS_ROOT + "gsys/pipe.py")
 
         if (pargs('run) == 1 && pargs('fillFeatures) == 1) {
 
+            println("Printing information about the graph and 3 sample vertices and edges")
             graphProp.printGraph(graphProp.graph)
+
+            println("Printing information about the **reverse** graph and 3 sample vertices and edges")
             graphProp.printGraph(graphProp.reverseGraph)
             graphProp.gc(true)
             var messages: OneOf[
