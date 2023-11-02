@@ -42,6 +42,7 @@ import copy
 from collections import defaultdict
 from .nn import TORCH_DTYPE
 import gc
+DEBUG = False
 
 
 def batch_data_gen(incoming_mq, batch_size):
@@ -394,7 +395,8 @@ class PreBatchedWorker(IPCBase):
 
     def _mini_batch_forward(self, model, H_u, V, U, batch_indices, no_grad):
         H_u = torch.as_tensor(H_u, dtype=TORCH_DTYPE, device=self.device)
-        print("Torch Got: {}, Shape: {}".format(H_u, H_u.shape))
+        if DEBUG:
+            print("Torch Got: {}, Shape: {}".format(H_u, H_u.shape))
         H_u.requires_grad_()
 
         if no_grad is True:
@@ -612,7 +614,8 @@ class PreBatchedWorker(IPCBase):
             ward_name = "WARD_{}".format(direction)
             with logsc(ward_name, elapsed_time=True,
                        log_dict=self.ward_log, accumulate=True):
-                logs(data)
+                if DEBUG:
+                    logs(data)
                 self.data_preprocess(data)
                 if direction == "forward":
                     with logsc(
@@ -837,7 +840,8 @@ class PreBatchedWorker(IPCBase):
                 logs(
                     "Finished, direction: {direction}, layer: {layer_idx}"
                     .format(**locals()))
-                logs(self.ward_log)
+                if DEBUG:
+                    logs(self.ward_log)
             if self.args.model_switch:
                 model = model.to("cpu")
 
@@ -910,9 +914,10 @@ class PreBatchedWorker(IPCBase):
         self.history[self.epoch]['valid'] = dict(self.valid_acc_all)
         self.history[self.epoch]['test'] = dict(self.test_acc_all)
         self.history[self.epoch]['runtime'] = self.ward_log
-        logs(
-            "Machine: {}, History: {}".format(
-                self.args.rank, dict(self.history)))
+        if DEBUG:
+            logs(
+                "Machine: {}, History: {}".format(
+                    self.args.rank, dict(self.history)))
         self.epoch += 1
         del self.layer_cache
         gc.collect()
@@ -1051,11 +1056,13 @@ class PreBatchedWorkerSHM(PreBatchedWorker):
         batch_indices_32bit = batch_indices.astype(np.float32)
 
         local_arr = np.c_[batch_indices_32bit, rlist]
-        logs("Peek inside the return value: {}, shape: {}, dtype: {}".format(
-            local_arr[0], local_arr.shape, local_arr.dtype))
+        if DEBUG:
+            logs("Peek inside the return value: {}, shape: {}, dtype: {}".format(
+                local_arr[0], local_arr.shape, local_arr.dtype))
         local_arr_ids = batch_indices
-        logs("Peek inside the return value ids: {}, shape: {}, dtype: {}".format(
-            local_arr_ids, local_arr_ids.shape, local_arr_ids.dtype))
+        if DEBUG:
+            logs("Peek inside the return value ids: {}, shape: {}, dtype: {}".format(
+                local_arr_ids, local_arr_ids.shape, local_arr_ids.dtype))
 
         shm_mem_name = "{}_{}".format(self.ident, self.received)
         shm_mem_name_ids = "{}_{}_ids".format(self.ident, self.received)
