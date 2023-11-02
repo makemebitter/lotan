@@ -17,37 +17,11 @@ import torch
 import os
 from .utils import logs
 import datetime
-
-
-# def init_ddp(args):
-#     if args.gpu:
-#         backend = 'nccl'
-#         # backend = 'gloo'
-#     else:
-#         backend = 'gloo'
-
-#     try:
-#         rank = int(os.getenv('WORKER_NUMBER')) + 1
-#     except Exception:
-#         rank = 0
-
-#     if args.dist:
-#         torch.distributed.init_process_group(
-#             backend=backend)
-#     else:
-#         torch.distributed.init_process_group(
-#             backend=backend,
-#             init_method='tcp://master:23456',
-#             rank=rank, world_size=args.size)
-
-
+from .all_args import get_rank
 
 # for DGL usage only
 def dist_init(args):
-    try:
-        rank = int(os.getenv('WORKER_NUMBER')) + 1
-    except Exception:
-        rank = 0
+    rank = get_rank()
     args.rank = rank
     if args.gpu:
         backend = 'nccl'

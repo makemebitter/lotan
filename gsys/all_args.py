@@ -40,6 +40,14 @@ def get_all_args(no_stdout=False):
     return args
 
 
+def get_rank():
+    try:
+        rank = int(os.getenv('WORKER_NUMBER')) + 1
+    except Exception:
+        rank = 0
+    return rank
+
+
 def get_args(pargs, no_stdout=False):
     if pargs.dataset == 'lognormal':
         args = lognormal_dataset()
@@ -56,10 +64,7 @@ def get_args(pargs, no_stdout=False):
     elif pargs.dataset == 'amazon':
         args = amazon_dataset()
     args = SimpleNamespace(**args._dict(), **pargs.__dict__)
-    try:
-        rank = int(os.getenv('WORKER_NUMBER')) + 1
-    except Exception:
-        rank = 0
+    rank = get_rank()
     args.rank = rank
 
     if args.model == 'sage':

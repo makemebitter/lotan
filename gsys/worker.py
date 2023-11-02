@@ -41,6 +41,7 @@ import torch
 import copy
 from collections import defaultdict
 from .nn import TORCH_DTYPE
+from .all_args import get_rank
 import gc
 DEBUG = False
 
@@ -190,10 +191,7 @@ class PreBatchedWorker(IPCBase):
     #     return json_objs
 
     def dist_init(self):
-        try:
-            rank = int(os.getenv('WORKER_NUMBER')) + 1
-        except Exception:
-            rank = 0
+        rank = get_rank()
         if self.args.gpu:
             backend = 'nccl'
         else:
