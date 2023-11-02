@@ -19,7 +19,7 @@ xavier="True"
 leaky="True"
 batchnorm="False"
 model="gcn" # or "gin"
-size="1"
+size="2"
 epoch=10
 # to enable model batching, change drill_down_mb_size to higher number
 COMMON_OPTIONS="--lotan_model_batching --drill_down_mb_size 1 --drill_down_mb_below_batching_start 0 --model ${model} --model_batchnorm ${batchnorm} --model_xavier ${xavier} --model_leaky ${leaky}"

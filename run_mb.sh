@@ -63,8 +63,8 @@ $DGL_PY dgl_to_spark_data.py --self_loop --undirected --dataset ${dataset}
 # -------------------------------------MB-------------------------------------
 # --lotan_model_batching
 options="--io_type byte --hard_partition $OPTIONS"
-numEParts=40
-numVParts=40
+numEParts=80
+numVParts=80
 # MASTER="master"
 # -----------------------------------server-----------------------------------
 export EXP_NAME="server"

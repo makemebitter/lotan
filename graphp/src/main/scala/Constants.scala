@@ -135,12 +135,13 @@ trait Constants {
     val SEED = 2021
     // ============================= Configs ==================================
     // directory to lotan root
-    val LOTAN_NFS_ROOT = "/mnt/lotan/"
+    val LOTAN_NFS_ROOT = "/mnt/nfs/lotan/"
     // modify this to be your spark master's ip
     val MASTER = "10.10.1.1"
     // Modify this to the list of IP addresses of your workers
     val hosts = Seq(
-        MASTER
+        "10.10.1.1",
+        "10.10.1.2"
     )
     // the root of datasets, default value 
     val DATA_NFS_ROOT = "/mnt/nfs/ssd/"
@@ -148,7 +149,7 @@ trait Constants {
     
     val master = "spark://" + MASTER + ":7077"
     val MEMORY = "120G"
-    val DGL_PY = "/mnt/env_dgl/bin/python3.8"
+    val DGL_PY = "/local/env_dgl/bin/python3"
     // ========================================================================
     val EDGE_FILE_PATH = DATA_NFS_ROOT + "lognormal/lognormal_edge.txt"
     val VERTEX_FILE_PATH = DATA_NFS_ROOT + "lognormal/lognormal_vertex.txt"
