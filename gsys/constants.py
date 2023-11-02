@@ -204,28 +204,28 @@ class lg_dataset_base(Constants):
 
 
 class lg_products_dataset(lg_dataset_base):
-    save_dir = "{constants.NFS_ROOT}/products"
+    save_dir = f"{constants.NFS_ROOT}/products"
     feature_shape = 100
     num_classes = 47
 
 
 class lg_arxiv_dataset(lg_dataset_base):
-    save_dir = "{constants.NFS_ROOT}/arxiv"
+    save_dir = f"{constants.NFS_ROOT}/arxiv"
     feature_shape = 128
     num_classes = 40
 
 class lg_yelp_dataset(lg_dataset_base):
-    save_dir = "{constants.NFS_ROOT}/yelp"
+    save_dir = f"{constants.NFS_ROOT}/yelp"
     feature_shape = 300
     num_classes = 100
 
 class lg_reddit_dataset(lg_dataset_base):
-    save_dir = "{constants.NFS_ROOT}/reddit"
+    save_dir = f"{constants.NFS_ROOT}/reddit"
     feature_shape = 602
     num_classes = 41
 
 class lg_amazon_dataset(lg_dataset_base):
-    save_dir = "{constants.NFS_ROOT}/amazon"
+    save_dir = f"{constants.NFS_ROOT}/amazon"
     feature_shape = 300
     num_classes = 22
 

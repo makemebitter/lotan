@@ -58,8 +58,8 @@ CMD_STR='spark-submit --conf "spark.executor.extraJavaOptions=-Ddev.ludovic.netl
 epochs=$EPOCHS
 
 
-export EXP_NAME="spark_dump"
-$DGL_PY dgl_to_spark_data.py --self_loop --undirected --dataset ${dataset} 
+# export EXP_NAME="spark_dump"
+# $DGL_PY dgl_to_spark_data.py --self_loop --undirected --dataset ${dataset} 
 # -------------------------------------MB-------------------------------------
 # --lotan_model_batching
 options="--io_type byte --hard_partition $OPTIONS"
@@ -92,15 +92,15 @@ SPARK_BASE_CMD="$CMD_STR --E2D ${E2D} --numVParts ${numVParts} --ipcType ${ipcTy
 # ----------------------------------------------------------------------------
 # ----------------------------hardPartition-----------------------------------
 
-set +e
-$HADOOP_HOME/bin/hdfs dfs -rm -r /edgesRev
-$HADOOP_HOME/bin/hdfs dfs -rm -r /edges
-$HADOOP_HOME/bin/hdfs dfs -rm -r /vertices
-set -e
+# set +e
+# $HADOOP_HOME/bin/hdfs dfs -rm -r /edgesRev
+# $HADOOP_HOME/bin/hdfs dfs -rm -r /edges
+# $HADOOP_HOME/bin/hdfs dfs -rm -r /vertices
+# set -e
 
-EXECUTE_CMD="$SPARK_BASE_CMD --hardPartition 1"
-RUN_EXP "$EXECUTE_CMD"
-echo "Dumped graph to HDFS"
+# EXECUTE_CMD="$SPARK_BASE_CMD --hardPartition 1"
+# RUN_EXP "$EXECUTE_CMD"
+# echo "Dumped graph to HDFS"
 
 EXECUTE_CMD="$SPARK_BASE_CMD --hardPartitionRead 1"
 RUN_EXP "$EXECUTE_CMD"
