@@ -1,18 +1,3 @@
-// Copyright 2023 Yuhao Zhang and Arun Kumar. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// =============================================================================
-
 /* SimpleApp.scala */
 package org.apache.spark.graphx.lotan.main
 import org.apache.spark.sql.SparkSession
@@ -268,7 +253,7 @@ object IOObjSparse extends IOBase[SparseVector[Float]] {
     }
 }
 
-object ByteIOObj extends TypesMKII with Constants {
+object ByteIOObj extends TypesMKII {
     def tokenize(command: String): Seq[String] = {
         val buf = new ArrayBuffer[String]
         val tok = new StringTokenizer(command)
@@ -539,7 +524,7 @@ object ByteIOObj extends TypesMKII with Constants {
         sparse: Boolean = false
     ): Either[RDD[(VertexId, EmbType)], RDD[(VertexId, EmbSparseType)]] = {
         var baseName =
-            DGL_PY + " -u pipe.py --io_type byte --ipc_type shm --worker_type prebatch_worker"
+            "./pipe.py --io_type byte --ipc_type shm --worker_type prebatch_worker"
 
         rdd match {
             case Right(x) => baseName += " --sparse"
@@ -646,7 +631,7 @@ class ExpRunner(
     val miniBatchSize = pargs('miniBatchSize)
 
     var baseCMD =
-        DGL_PY + s" -u ./pipe.py --worker_type prebatch_worker --mini_batch_size $miniBatchSize"
+        s"./pipe.py --worker_type prebatch_worker --mini_batch_size $miniBatchSize"
 
     baseCMD = baseCMD + " --io_type"
     baseCMD = if (pargs('ioType) == 0) {
@@ -686,14 +671,19 @@ class ExpRunner(
         distScriptNameForbackward + " --sparse"
 
     def train(): Unit = {
-        graphProp.sc.addFile(LOTAN_NFS_ROOT + "gsys/pipe.py")
+        graphProp.sc.addFile("/mnt/nfs/gsys/gsys/pipe.py")
+        // graphProp.sc.addFile("/mnt/nfs/gsys/gsys/__init__.py")
+        // graphProp.sc.addFile("/mnt/nfs/gsys/gsys/constants.py")
+
+        // val baseScriptCmd =
+        //     s"./pipe.py --worker_type prebatch_worker --mini_batch_size $miniBatchSize --io_type raw_string --ipc_type shm"
+        // var distScriptName = baseScriptCmd
+
+        // var distScriptNameGrad = distScriptName + " --messenger_grad"
 
         if (pargs('run) == 1 && pargs('fillFeatures) == 1) {
 
-            println("Printing information about the graph and 3 sample vertices and edges")
             graphProp.printGraph(graphProp.graph)
-
-            println("Printing information about the **reverse** graph and 3 sample vertices and edges")
             graphProp.printGraph(graphProp.reverseGraph)
             graphProp.gc(true)
             var messages: OneOf[
@@ -724,13 +714,11 @@ class ExpRunner(
 
                     }
                     val messages = this.forwardOverall(epoch, layerIDX)
-                    if(DEBUG){
-                        messages match {
-                            case First(x)  => x.take(10).foreach(println)
-                            case Second(x) => x.take(10).foreach(println)
-                            case Third(x)  => x.take(10).foreach(println)
-                            case Fourth(x) => x.take(10).foreach(println)
-                        }
+                    messages match {
+                        case First(x)  => x.take(10).foreach(println)
+                        case Second(x) => x.take(10).foreach(println)
+                        case Third(x)  => x.take(10).foreach(println)
+                        case Fourth(x) => x.take(10).foreach(println)
                     }
                     // gc
                     graphProp.resetCache(true)
@@ -1446,9 +1434,7 @@ class ExpRunner(
                         ret match {
                             case Right(x) => {
                                 this.graphProp.cacheRDD(x, "pipedback", "tmp")
-                                if (DEBUG){
-                                    x.take(10).foreach(println)
-                                }
+                                x.take(10).foreach(println)
                                 Fourth(x)
                             }
                             case Left(_) => throw new Exception("Not supposed to get here")
@@ -1661,5 +1647,107 @@ object SimpleApp extends MainBase {
         val expRunner = new ExpRunner(pargs)
         expRunner.run()
         println("__SUCCESS__")
+        // val vcount = graph.vertices.count()
+        // val ecount = graph.edges.count()
+        // println(s"#vertices: $vcount, #edges: $ecount")
+
+        // graph.vertices.take(10).foreach(println)
+
+        // Pytorch stuff and then vprop.message is updated again
+        //
+        //
+        //
+        // -----------------------------------------------------
+
+        // update edges
+        // graphProp.reverseGraph = graphProp.reverseGraph.mapEdges(e => {
+        //     e.attr.grad = Array.fill(100)(1)
+        //     e.attr
+        // })
+        // if (pargs('verbose) > 0) {
+        //     graphProp.printReverseGraph()
+        // }
+
+        // ----------------------- direct method ---------------
+
+        // ----------------------- collect method ---------------
+        // val messages = graphProp.gatherScatterCollect("In")
+        // val messages_count = messages.count()
+        // println(s"messages: #vertices: $messages_count")
+
+        // // val msamples = messages.take(10)
+        // // for ((id, arr) <- msamples) {
+        // //     val arr_str = arr.mkString(", ")
+        // //     println(s"ID: $id, Content: $arr_str")
+        // // }
+
+        // // update graph
+        // graphProp.graph = graph.joinVertices(messages)((id, vprop, message) => {
+        //     vprop.message = message
+        //     vprop
+        // })
+
+        // Pytorch stuff and then vprop.message is updated again
+        //
+        //
+        //
+        // -----------------------------------------------------
+
+        // // backprop
+        // val gradientRDD = graphProp.backpropGatherScatterCollect()
+        // val vcount = gradientRDD.count()
+        // println(s"#vertices: $vcount")
+        // val nsamples = gradientRDD.take(10)
+        // for ((id, arr) <- nsamples) {
+        //     val arr_str = arr.mkString(", ")
+        //     println(s"ID: $id, Content: $arr_str")
+        // }
+
+        // val vcount = graph.vertices.count()
+        // val ecount = graph.edges.count()
+        // println(s"#vertices: $vcount, #edges: $ecount")
+        // var samples = graph.vertices.take(10)
+        // for ((id, vprop) <- samples) {
+        //     if (vprop.message != null) {
+        //         val arr_str = vprop.message.mkString(", ")
+        //         println(s"ID: $id, Content: $arr_str")
+        //     }
+        // }
+
+        // // backprop
+        // val gradientRDD = graphProp.backpropGatherScatterCollect()
+        // val vcount = gradientRDD.count()
+        // println(s"#vertices: $vcount")
+        // val nsamples = gradientRDD.take(10)
+        // for ((id, arr) <- nsamples) {
+        //     val arr_str = arr.mkString(", ")
+        //     println(s"ID: $id, Content: $arr_str")
+        // }
+
+        // val vcount = graph.vertices.count()
+        // val ecount = graph.edges.count()
+        // println(s"#vertices: $vcount, #edges: $ecount")
+
+        // val messages = graphProp.gatherScatterCollect("In")
+
+        // assume pytorch part is done
+        // now to do backprop
+
+        // val gradGraph = Graph(messages, graph.edges)
+
+        // val gradientRDD = graphProp.backpropGatherScatter()
+
+        // val nsamples = gradientRDD.take(10)
+        // for ((id, arr) <- nsamples) {
+        //     val arr_str = arr.mkString(", ")
+        //     println(s"ID: $id, Content: $arr_str")
+        // }
+        // // Divide total age by number of older followers to get average age of older followers
+        // val avgAgeOfOlderFollowers: VertexRDD[Double] =
+        //     olderFollowers.mapValues((id, value) =>
+        //         value match { case (count, totalAge) => totalAge / count }
+        //     )
+        // // Display the results
+        // avgAgeOfOlderFollowers.collect.foreach(println(_))
     }
 }

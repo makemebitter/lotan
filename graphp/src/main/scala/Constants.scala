@@ -1,18 +1,3 @@
-// Copyright 2023 Yuhao Zhang and Arun Kumar. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// =============================================================================
-    
 package constants
 import org.apache.spark.graphx._
 import org.apache.spark.rdd.RDD
@@ -131,48 +116,41 @@ class EdgeProperty(
 ) extends Serializable {}
 
 trait Constants {
-    val DEBUG = false
     val SEED = 2021
-    // ============================= Configs ==================================
-    // directory to lotan root
-    val LOTAN_NFS_ROOT = "/mnt/nfs/lotan/"
-    // modify this to be your spark master's ip
-    val MASTER = "10.10.1.1"
-    // Modify this to the list of IP addresses of your workers
-    val hosts = Seq(
-        "10.10.1.1",
-        "10.10.1.2"
-    )
-    // the root of datasets, default value 
-    val DATA_NFS_ROOT = "/mnt/nfs/ssd/"
-    val HDFS_ADDRESS = "hdfs://" + MASTER + ":9000/"
-    
-    val master = "spark://" + MASTER + ":7077"
-    val MEMORY = "120G"
-    val DGL_PY = "/local/env_dgl/bin/python3"
-    // ========================================================================
-    val EDGE_FILE_PATH = DATA_NFS_ROOT + "lognormal/lognormal_edge.txt"
-    val VERTEX_FILE_PATH = DATA_NFS_ROOT + "lognormal/lognormal_vertex.txt"
+    val EDGE_FILE_PATH = "/mnt/nfs/ssd/lognormal/lognormal_edge.txt"
+    val VERTEX_FILE_PATH = "/mnt/nfs/ssd/lognormal/lognormal_vertex.txt"
     val REVERSE_EDGE_FILE_PATH =
-        DATA_NFS_ROOT + "lognormal/reverse_lognormal_edge.txt"
+        "/mnt/nfs/ssd/lognormal/reverse_lognormal_edge.txt"
     val REVERSE_VERTEX_FILE_PATH =
-        DATA_NFS_ROOT + "lognormal/reverse_lognormal_vertex.txt"
+        "/mnt/nfs/ssd/lognormal/reverse_lognormal_vertex.txt"
     val DATE_FORMAT = "YYYY-mm-dd HH:MM:SS"
     val META = "meta.csv"
     val EDGES = "edges.csv"
     val FEATURES = "features.csv"
-
-    type OptionMap = mMap[Symbol, Int]
     val datasetMap = mMap(
-        "products" -> (DATA_NFS_ROOT + "products"),
-        "processed" -> (DATA_NFS_ROOT + "processed")
+        "products" -> "/mnt/nfs/ssd/products",
+        "processed" -> "/mnt/nfs/ssd/processed"
     )
     val datasetBetterMap = mMap(
-        0 -> (DATA_NFS_ROOT + "processed"),
-        1 -> (DATA_NFS_ROOT + "products"),
-        2 -> (DATA_NFS_ROOT + "arxiv"),
-        3 -> (HDFS_ADDRESS + "papers100M")
+        0 -> "/mnt/nfs/ssd/processed",
+        1 -> "/mnt/nfs/ssd/products",
+        2 -> "/mnt/nfs/ssd/arxiv",
+        3 -> "hdfs://master:9000/papers100M",
+        4 -> "/mnt/nfs/ssd/yelp",
+        5 -> "/mnt/nfs/ssd/reddit",
+        6 -> "/mnt/nfs/ssd/amazon"
     )
+    val hosts = Seq(
+        "10.10.1.1",
+        "10.10.1.2",
+        "10.10.1.3",
+        "10.10.1.4",
+        "10.10.1.5",
+        "10.10.1.6",
+        "10.10.1.7",
+        "10.10.1.8"
+    )
+    type OptionMap = mMap[Symbol, Int]
 
 }
 trait Types {

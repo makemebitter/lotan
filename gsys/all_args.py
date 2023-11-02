@@ -1,18 +1,3 @@
-# Copyright 2023 Yuhao Zhang and Arun Kumar. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-
 import argparse
 from types import SimpleNamespace
 from .constants import sage_cats
@@ -22,6 +7,9 @@ from .constants import products_dataset
 from .constants import papers100M_dataset
 from .constants import arxiv_dataset
 from .constants import lognormal_dataset
+from .constants import yelp_dataset
+from .constants import reddit_dataset
+from .constants import amazon_dataset
 from .utils import logs
 import os
 
@@ -44,11 +32,17 @@ def get_args(pargs, no_stdout=False):
         args = products_dataset()
     elif pargs.dataset == 'ogbn-papers100M':
         args = papers100M_dataset()
+    elif pargs.dataset == 'yelp':
+        args = yelp_dataset()
+    elif pargs.dataset == 'reddit':
+        args = reddit_dataset()
     elif pargs.dataset == 'ogbn-arxiv':
         args = arxiv_dataset()
+    elif pargs.dataset == 'amazon':
+        args = amazon_dataset()
     args = SimpleNamespace(**args._dict(), **pargs.__dict__)
     try:
-        rank = int(os.getenv('WORKER_NUMBER'))
+        rank = int(os.getenv('WORKER_NUMBER')) + 1
     except Exception:
         rank = 0
     args.rank = rank
@@ -165,7 +159,7 @@ def get_main_parser():
         '--dist', action='store_true'
     )
     parser.add_argument(
-        '--size', type=int, default=2
+        '--size', type=int, default=8
     )
     parser.add_argument(
         '--verbose', type=int, default=2
@@ -175,9 +169,6 @@ def get_main_parser():
     )
     parser.add_argument(
         '--model', type=str, default='sage'
-    )
-    parser.add_argument(
-        '--master', type=str, default='master'
     )
     parser.add_argument(
         '--dataset', type=str, default='ogbn-products'

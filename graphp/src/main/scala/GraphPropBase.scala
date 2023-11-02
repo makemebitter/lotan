@@ -1,18 +1,3 @@
-// Copyright 2023 Yuhao Zhang and Arun Kumar. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// =============================================================================
-
 package org.apache.spark.graphx.lotan.graphpropbase
 import scala.collection.mutable.{Map => mMap}
 import constants.Constants
@@ -36,16 +21,14 @@ import graphgenerators.GraphGenerators
 import breeze.linalg.DenseVector
 import breeze.linalg.SparseVector
 
-object SendFinished extends Serializable with Constants {
+object SendFinished extends Serializable {
     import sys.process._
-    lazy val cmd = DGL_PY + " -u " + LOTAN_NFS_ROOT + "gsys/pipe.py --send_finished"
-    lazy val res = cmd !
+    lazy val res = "/mnt/nfs/gsys/gsys/pipe.py --send_finished" !
 }
 
-object SendTerm extends Serializable with Constants {
+object SendTerm extends Serializable {
     import sys.process._
-    lazy val cmd = DGL_PY + " -u " + LOTAN_NFS_ROOT + "gsys/pipe.py --send_term"
-    lazy val res = cmd !
+    lazy val res = "/mnt/nfs/gsys/gsys/pipe.py --send_term" !
 }
 
 class GraphPropBase(val pargs: mMap[Symbol, Int]) extends Constants {
@@ -159,6 +142,7 @@ class GraphPropBase(val pargs: mMap[Symbol, Int]) extends Constants {
     }
 
     def createSpark(): Unit = {
+        val memory = "150G"
         var localityWait = if (pargs('hardPartition) == 1) {
             "0"
         } else {
@@ -170,12 +154,12 @@ class GraphPropBase(val pargs: mMap[Symbol, Int]) extends Constants {
         spark = SparkSession.builder
             .config(getKryoConfigs)
             .appName("Simple Application")
-            .master(master)
+            .master("spark://10.10.1.1:7077")
             //     .config("spark.executor.instances", "4")
             // .config("spark.driver.memory", "2g")
             .config("spark.task.cpus", eachTCPUs)
-            .config("spark.driver.host", MASTER)
-            .config("spark.executor.memory", MEMORY)
+            .config("spark.driver.host", "master")
+            .config("spark.executor.memory", memory)
             .config("spark.memory.fraction", "0.6")
             .config("spark.network.timeout", "10000000s")
             .config("spark.locality.wait", localityWait)
@@ -199,13 +183,11 @@ class GraphPropBase(val pargs: mMap[Symbol, Int]) extends Constants {
 
         this.cacheRDD_(g.vertices.partitionsRDD, vertexName, graphCache = true)
         
-        if (DEBUG){
-            println(g.edges.partitionsRDD.name)
-            println(g.vertices.partitionsRDD.name)
-            println(g.edges.partitionsRDD.id)
-            println(g.vertices.partitionsRDD.id)
-        }
         
+        println(g.edges.partitionsRDD.name)
+        println(g.vertices.partitionsRDD.name)
+        println(g.edges.partitionsRDD.id)
+        println(g.vertices.partitionsRDD.id)
         // cachedNamesSet += g.edges.name
         // cachedNamesSet += g.vertices.name
         if (lease == "perm") {
@@ -226,11 +208,8 @@ class GraphPropBase(val pargs: mMap[Symbol, Int]) extends Constants {
     }
     def gc(blocking: Boolean = false) = {
         val cachedMap = this.sc.getPersistentRDDs
-        if (DEBUG){
-            println(cachedMap)
-            println(cachedIdSet)
-        }
-        
+        println(cachedMap)
+        println(cachedIdSet)
         for ((id, rdd) <- cachedMap) {
             val name = rdd.name
             if (!this.cachedIdSet.contains(id)) {
@@ -239,9 +218,7 @@ class GraphPropBase(val pargs: mMap[Symbol, Int]) extends Constants {
             }
 
         }
-        if (DEBUG){
-            println(this.sc.getPersistentRDDs)
-        }
+        println(this.sc.getPersistentRDDs)
         System.gc()
     }
 
@@ -297,9 +274,7 @@ class GraphPropBase(val pargs: mMap[Symbol, Int]) extends Constants {
 
         }
         name = name + "_" + RDDName
-        if (DEBUG){
-            println(s"Caching $realRDD, $name, $realID")
-        }
+        println(s"Caching $realRDD, $name, $realID")
         this.cacheRDD_(realRDD, name, graphCache = false)
         this.cachedCount += 1
 
@@ -393,20 +368,18 @@ class GraphPropBase(val pargs: mMap[Symbol, Int]) extends Constants {
         // trigger action
         val vcount = g.vertices.count()
         val ecount = g.edges.count()
-        println("------------------------------------------------------------")
         println(s"#vertices: $vcount, #edges: $ecount")
-        val samples = g.vertices.take(3)
+        val samples = g.vertices.take(10)
         for ((id, vprop) <- samples) {
             val arr_str = vprop.toString()
             println(s"ID: $id, Content: $arr_str")
         }
-        val edgeSamples = g.edges.take(3)
+        val edgeSamples = g.edges.take(10)
         for (eprop <- edgeSamples) {
             println(
                 s"Src: ${eprop.srcId}, Dst: ${eprop.dstId}, Weight: ${eprop.attr.weight}"
             )
         }
-        println("------------------------------------------------------------")
 
     }
     def sendFinished() = {

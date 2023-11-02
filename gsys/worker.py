@@ -34,12 +34,14 @@ from .utils import logs
 from .utils import logsc
 
 from .nn import accuracy
+from .nn import cal_cm
+from .nn import f1
+from .nn import f1_micro_from_cm
 import torch
 import copy
 from collections import defaultdict
 from .nn import TORCH_DTYPE
 import gc
-DEBUG = False
 
 
 def batch_data_gen(incoming_mq, batch_size):
@@ -188,21 +190,16 @@ class PreBatchedWorker(IPCBase):
 
     def dist_init(self):
         try:
-            rank = int(os.getenv('WORKER_NUMBER'))
+            rank = int(os.getenv('WORKER_NUMBER')) + 1
         except Exception:
             rank = 0
-        if torch.cuda.is_available() and self.args.gpu:
+        if self.args.gpu:
             backend = 'nccl'
         else:
             backend = 'gloo'
-
-        logs(
-            "DDP Initializing ... Rank: {}, World Size: {}".format(
-                rank, self.args.size))
-
         torch.distributed.init_process_group(
             backend=backend,
-            init_method='tcp://{}:23456'.format(self.args.master),
+            init_method='tcp://master:23456',
             rank=rank, world_size=self.args.size)
 
         logs("DDP Initialized: {}".format(torch.distributed.is_initialized()))
@@ -316,9 +313,17 @@ class PreBatchedWorker(IPCBase):
 
         if self.args.dataset == 'lognormal':
             self.criterion = torch.nn.CrossEntropyLoss()
+        elif self.args.dataset == 'yelp':
+            # multi-label
+            self.criterion = torch.nn.BCEWithLogitsLoss(reduction='mean')
         else:
             self.criterion = torch.nn.CrossEntropyLoss(reduction='none')
-        self.log_softmax = torch.nn.LogSoftmax()
+        if self.args.dataset == 'yelp':
+            self.logit_fn = torch.nn.Sigmoid()
+            self.multi_label = True
+        else:
+            self.logit_fn = torch.nn.LogSoftmax()
+            self.multi_label = False
         if self.args.lbfgs:
             self.params = []
             for layer in self.models:
@@ -389,8 +394,7 @@ class PreBatchedWorker(IPCBase):
 
     def _mini_batch_forward(self, model, H_u, V, U, batch_indices, no_grad):
         H_u = torch.as_tensor(H_u, dtype=TORCH_DTYPE, device=self.device)
-        if DEBUG:
-            print("Torch Got: {}, Shape: {}".format(H_u, H_u.shape))
+        print("Torch Got: {}, Shape: {}".format(H_u, H_u.shape))
         H_u.requires_grad_()
 
         if no_grad is True:
@@ -452,14 +456,25 @@ class PreBatchedWorker(IPCBase):
                             valid_result, valid_labels):
 
         # print(valid_result)
-        valid_result = self.log_softmax(valid_result)
-        acc_packet = accuracy(
-            valid_result,
-            valid_labels,
-            return_raw=True)[0]
-        print("Submodel: {}, Mode: {}, Acc: {}".format(
-            submodel_index, mode, acc_packet))
-        correct, bsize = acc_packet
+        valid_result = self.logit_fn(valid_result)
+
+        if self.multi_label:
+            valid_result = valid_result.cpu().numpy()
+
+            valid_labels = valid_labels.cpu().numpy()
+            f1_micro, f1_macro = f1(valid_result, valid_labels)
+            cm, bsize = cal_cm(valid_result, valid_labels)
+            print("Submodel: {}, Mode: {}, F1s: {}".format(
+                submodel_index, mode, (f1_micro, f1_macro)))
+            correct = cm
+        else:
+            acc_packet = accuracy(
+                valid_result,
+                valid_labels,
+                return_raw=True)[0]
+            print("Submodel: {}, Mode: {}, Acc: {}".format(
+                submodel_index, mode, acc_packet))
+            correct, bsize = acc_packet
         if mode == 'valid':
             self.valid_correct[submodel_index] += correct
             self.valid_total[submodel_index] += bsize
@@ -543,7 +558,7 @@ class PreBatchedWorker(IPCBase):
             train_mask,
             batch_indices, submodel_index=0):
         with logsc("FORWARD", elapsed_time=True):
-
+            
             loss = self.criterion(y, labels)
             # logs(
             #   "Batch raw loss: {}, sum: {}".format(
@@ -597,8 +612,7 @@ class PreBatchedWorker(IPCBase):
             ward_name = "WARD_{}".format(direction)
             with logsc(ward_name, elapsed_time=True,
                        log_dict=self.ward_log, accumulate=True):
-                if DEBUG:
-                    logs(data)
+                logs(data)
                 self.data_preprocess(data)
                 if direction == "forward":
                     with logsc(
@@ -649,6 +663,33 @@ class PreBatchedWorker(IPCBase):
                             else:
                                 self.cal_loss_and_backward(
                                     result, labels, train_mask, batch_indices)
+
+                            # labels = self.meta[batch_indices, 1].to(
+                            #     self.device)
+                            # train_mask = self.meta[batch_indices, 3].to(
+                            #     self.device)
+                            # loss = self.criterion(result, labels)
+                            # # logs(
+                            # #   "Batch raw loss: {}, sum: {}".format(
+                            # #   loss, loss.sum()))
+
+                            # masked_loss = loss * train_mask
+                            # # logs(
+                            # #   "Masked loss: {}, sum: {}".format(
+                            # #       masked_loss, masked_loss.sum()))
+
+                            # # scaling to make sure it mathematically
+                            # # equals single node execution
+                            # # / train_mask.sum()
+                            # #
+                            # fin_loss = \
+                            #     masked_loss.sum() / self.total_train_count \
+                            #     * self.args.size
+                            # self.curr_epoch_total_loss += fin_loss
+                            # logs("Batch loss: {}".format(
+                            #     fin_loss.detach().cpu().numpy()))
+                        # with logsc("BACKWARD", elapsed_time=True):
+                        #     fin_loss.backward()
 
                         # validation accuracy
                         with logsc("VALIDATION", elapsed_time=True):
@@ -778,6 +819,11 @@ class PreBatchedWorker(IPCBase):
                         gen, model, outgoing_mq,
                         first_layer=True, count_batches=True, layer_index=j)
 
+                # save the first layer keys
+                # keys = list(self.first_layer_cache.keys())
+                # with open('/local/keys.pickle', 'wb') as fp:
+                #     pickle.dump(keys, fp)
+
                 logs("First layer of first epoch finished")
             else:
                 if j == self.num_models - 1:
@@ -818,8 +864,7 @@ class PreBatchedWorker(IPCBase):
                 logs(
                     "Finished, direction: {direction}, layer: {layer_idx}"
                     .format(**locals()))
-                if DEBUG:
-                    logs(self.ward_log)
+                logs(self.ward_log)
             if self.args.model_switch:
                 model = model.to("cpu")
 
@@ -829,20 +874,53 @@ class PreBatchedWorker(IPCBase):
             self.save_models()
 
         for k, v in self.valid_correct.items():
+            f1_arg = False
+            if self.multi_label:
+                valid_conf_mat = self.valid_correct[k]
+                self.valid_correct[k] = valid_conf_mat.tolist()
+                test_conf_mat = self.test_correct[k]
+                self.test_correct[k] = test_conf_mat.tolist()
 
-            valid_acc = self.valid_correct[k] / self.valid_total[k] \
-                if self.valid_total[k] != 0 else 0
-            test_acc = self.test_correct[k] / self.test_total[k] \
-                if self.test_total[k] != 0 else 0
+                valid_conf_mat_sum = valid_conf_mat.sum(axis=0)
+                test_conf_mat_sum = test_conf_mat.sum(axis=0)
+
+                valid_acc = f1_micro_from_cm(valid_conf_mat_sum)
+                test_acc = f1_micro_from_cm(test_conf_mat_sum)
+                f1_arg = True
+                log_local_test_acc(
+                    self.args.rank,
+                    self.epoch,
+                    "valid",
+                    valid_acc,
+                    self.valid_total[k], self.valid_correct[k], f1=f1_arg, submodel=k)
+                log_local_test_acc(
+                    self.args.rank,
+                    self.epoch,
+                    "test",
+                    test_acc,
+                    self.test_total[k], self.test_correct[k], f1=f1_arg, submodel=k)
+
+            else:
+                valid_acc = self.valid_correct[k] / self.valid_total[k] \
+                    if self.valid_total[k] != 0 else 0
+                test_acc = self.test_correct[k] / self.test_total[k] \
+                    if self.test_total[k] != 0 else 0
+                log_local_test_acc(
+                    self.args.rank,
+                    self.epoch,
+                    "valid",
+                    valid_acc,
+                    self.valid_total[k], submodel=k)
+                log_local_test_acc(
+                    self.args.rank,
+                    self.epoch,
+                    "test",
+                    test_acc,
+                    self.test_total[k], submodel=k)
 
             self.valid_acc_all[k] = valid_acc
             self.test_acc_all[k] = test_acc
-            log_local_test_acc(
-                self.args.rank,
-                self.epoch, "valid", valid_acc, self.valid_total[k], k)
-            log_local_test_acc(
-                self.args.rank,
-                self.epoch, "test", test_acc, self.test_total[k], k)
+            
         self.return_message = "SUCCESS"
 
         msg = self.serialize(messages.ALL_FINISHED)
@@ -859,10 +937,9 @@ class PreBatchedWorker(IPCBase):
         self.history[self.epoch]['valid'] = dict(self.valid_acc_all)
         self.history[self.epoch]['test'] = dict(self.test_acc_all)
         self.history[self.epoch]['runtime'] = self.ward_log
-        if DEBUG:
-            logs(
-                "Machine: {}, History: {}".format(
-                    self.args.rank, dict(self.history)))
+        logs(
+            "Machine: {}, History: {}".format(
+                self.args.rank, dict(self.history)))
         self.epoch += 1
         del self.layer_cache
         gc.collect()
@@ -1001,13 +1078,11 @@ class PreBatchedWorkerSHM(PreBatchedWorker):
         batch_indices_32bit = batch_indices.astype(np.float32)
 
         local_arr = np.c_[batch_indices_32bit, rlist]
-        if DEBUG:
-            logs("Peek inside the return value: {}, shape: {}, dtype: {}".format(
-                local_arr[0], local_arr.shape, local_arr.dtype))
+        logs("Peek inside the return value: {}, shape: {}, dtype: {}".format(
+            local_arr[0], local_arr.shape, local_arr.dtype))
         local_arr_ids = batch_indices
-        if DEBUG:
-            logs("Peek inside the return value ids: {}, shape: {}, dtype: {}".format(
-                local_arr_ids, local_arr_ids.shape, local_arr_ids.dtype))
+        logs("Peek inside the return value ids: {}, shape: {}, dtype: {}".format(
+            local_arr_ids, local_arr_ids.shape, local_arr_ids.dtype))
 
         shm_mem_name = "{}_{}".format(self.ident, self.received)
         shm_mem_name_ids = "{}_{}_ids".format(self.ident, self.received)

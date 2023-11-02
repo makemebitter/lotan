@@ -39,9 +39,17 @@ def logs(message):
     return printed
 
 
-def log_local_test_acc(*args, submodel=0):
-    template = \
-        "EVENT<Machine: {}, Epoch: {}, Mode: {}, Accuracy: {}, Count: {}, Submodel: {}>"
+def log_local_test_acc(*args, submodel=0, f1=False, micro_only=True):
+    if f1:
+        if micro_only:
+            template = \
+            "EVENT<Machine: {}, Epoch: {}, Mode: {}, f1_micro: {}, Count: {}, cm: {}, Submodel: {}>"
+        else:
+            template = \
+            "EVENT<Machine: {}, Epoch: {}, Mode: {}, f1_micro: {}, f1_macro: {}, Count: {}, cm: {}, Submodel: {}>"
+    else:
+        template = \
+            "EVENT<Machine: {}, Epoch: {}, Mode: {}, Accuracy: {}, Count: {}, Submodel: {}>"
     message = template.format(*args, submodel)
     logs(message)
     return message

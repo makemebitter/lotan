@@ -5,4 +5,4 @@ ipc_type=${3:-"shm"}
 
 pkill -f 'pipe.py' && sleep 2
 pkill -f 'server_main.py' && sleep 2
-$DGL_PY -u server_main.py --worker_type "prebatch_worker" --verbose 0 --gpu --agg_pushdown ${agg_pushdown} --ipc_type ${ipc_type} $OPTIONS
+$DGL_PY -u server_main.py --worker_type "prebatch_worker" --verbose 0 --gpu --agg_pushdown ${agg_pushdown} --size 8 --ipc_type ${ipc_type} $OPTIONS

@@ -1,20 +1,35 @@
-# Copyright 2023 Yuhao Zhang and Arun Kumar. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-
 import torch
+from sklearn.metrics import f1_score
+import numpy as np
+from sklearn.metrics import multilabel_confusion_matrix
 TORCH_DTYPE = torch.float32
+
+
+
+def unpack_conf_mat(conf_mat):
+    tn, fp, fn, tp = conf_mat.ravel()
+    return tn, fp, fn, tp
+
+def f1_micro_from_cm(cm):
+    tn, fp, fn, tp = unpack_conf_mat(cm)
+    return tp / (tp + 1 / 2 * (fp + fn))
+
+
+def cal_cm(y_pred, y_true):
+    conf_mat = multilabel_confusion_matrix(
+        y_true, y_pred)
+    return conf_mat, y_pred.shape[0]
+
+def f1(y_pred, y_true, multilabel=True):
+    # y_true = y_true.cpu().numpy()
+    # y_pred = y_pred.cpu().numpy()
+    if multilabel:
+        y_pred[y_pred > 0.5] = 1.0
+        y_pred[y_pred <= 0.5] = 0.0
+    else:
+        y_pred = np.argmax(y_pred, axis=1)
+    return f1_score(y_true, y_pred, average="micro"), \
+        f1_score(y_true, y_pred, average="macro")
 
 
 def accuracy(output, target, topk=(1, ), binary=False, return_raw=False):

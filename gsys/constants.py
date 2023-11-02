@@ -1,20 +1,4 @@
-# Copyright 2023 Yuhao Zhang and Arun Kumar. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
-
 import itertools
-import os
 LARGE_INT = 1e10
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
@@ -37,27 +21,24 @@ class Constants(object):
 class constants(Constants):
     MASKS = ['all_mask', 'train_mask', 'valid_mask', 'test_mask']
     NTYPES = ['train', 'valid', 'test']
-    # HOSTS = '/mnt/nfs/all_host_list'
+    HOSTS = '/mnt/nfs/all_host_list'
     FEATURE = 'feat'
     LABELS = 'labels'
-    PIPES_ROOT = '/tmp'
+    PIPES_ROOT = '/mnt/ssd/tmp'
     M2W = 'm2w'
     W2M = 'w2m'
     SEED = 2021
-    DGL_DATASET_DIR = '/mnt/nfs/datasets'
-    NFS_ROOT = '/mnt/nfs/ssd'
-    DGL_CACHE_DIR = os.path.join(NFS_ROOT, 'dgl_cached')
-    # MACHINES = [
-    #     "10.0.1.{}:5699".format(i) for i in range(1, 5)
-    # ]
+    MACHINES = [
+        "10.0.1.{}:5699".format(i) for i in range(1, 5)
+    ]
 
 
 class network_constants(constants):
-    ROUTER_ADDRESS = f'ipc://{constants.PIPES_ROOT}/router'
-    CONTROLLER_ADDRESS = f'ipc://{constants.PIPES_ROOT}/controller'
-    ROUTER_BACKEND_IPC = f'ipc://{constants.PIPES_ROOT}/backend'
-    ROUTER_BACKEND_IMQ_IPC = f'ipc://{constants.PIPES_ROOT}/backend_imq'
-    ROUTER_BACKEND_OMQ_IPC = f'ipc://{constants.PIPES_ROOT}/backend_omq'
+    ROUTER_ADDRESS = 'ipc:///mnt/ssd/tmp/router'
+    CONTROLLER_ADDRESS = 'ipc:///mnt/ssd/tmp/controller'
+    ROUTER_BACKEND_IPC = 'ipc:///mnt/ssd/tmp/backend'
+    ROUTER_BACKEND_IMQ_IPC = 'ipc:///mnt/ssd/tmp/backend_imq'
+    ROUTER_BACKEND_OMQ_IPC = 'ipc:///mnt/ssd/tmp/backend_omq'
     INCOMING_MQ_MAX_SIZE = 20
     OUTCOMING_MQ_MAX_SIZE = INCOMING_MQ_MAX_SIZE
     INCOMING_MQ_TIMEOUT = 2
@@ -145,62 +126,70 @@ class gin_cats(gcn_cats):
     mlp_hidden = [128]
 
 
-def dgl_class_factory(GNAME, name):
-    created_class = type(name, (object, ), {
-        "GNAME": GNAME,
-        "DATA_REPO": f'{constants.DGL_DATASET_DIR}/{GNAME}',
-        "DATA_REPO_NFS": f'{constants.DGL_DATASET_DIR}/{GNAME}',
-        "cache_dir": f'{constants.DGL_CACHE_DIR}/{GNAME}'
-    }
-    )
-    return created_class
+class dgl_products_dataset:
+    GNAME = 'ogbn-products'
+    DATA_REPO = '/mnt/nfs/datasets/ogbn-products'
+    DATA_REPO_NFS = '/mnt/nfs/datasets/ogbn-products'
+    cache_dir = '/mnt/nfs/ssd/dgl_cached/ogbn-products'
 
 
-dgl_products_dataset = dgl_class_factory(
-    "ogbn-products", "dgl_products_dataset")
-dgl_arxiv_dataset = dgl_class_factory("ogbn-arxiv", "dgl_arxiv_dataset")
-dgl_papers100M_dataset = dgl_class_factory(
-    "ogbn-papers100M", "dgl_papers100M_dataset")
-
-# class dgl_products_dataset:
-#     GNAME = 'ogbn-products'
-#     DATA_REPO = f'{constants.DGL_DATASET_DIR}/ogbn-products'
-#     DATA_REPO_NFS = f'{constants.DGL_DATASET_DIR}/ogbn-products'
-#     cache_dir = f'{constants.DGL_CACHE_DIR}/ogbn-products'
+class dgl_arxiv_dataset:
+    GNAME = 'ogbn-arxiv'
+    DATA_REPO = '/mnt/nfs/datasets/ogbn-arxiv'
+    DATA_REPO_NFS = '/mnt/nfs/datasets/ogbn-arxiv'
+    cache_dir = '/mnt/nfs/ssd/dgl_cached/ogbn-arxiv'
 
 
-# class dgl_arxiv_dataset:
-#     GNAME = 'ogbn-arxiv'
-#     DATA_REPO = f'{constants.DGL_DATASET_DIR}/ogbn-arxiv'
-#     DATA_REPO_NFS = f'{constants.DGL_DATASET_DIR}/ogbn-arxiv'
-#     cache_dir = f'{constants.DGL_CACHE_DIR}/ogbn-arxiv'
+class dgl_papers100M_dataset:
+    GNAME = 'ogbn-papers100M'
+    DATA_REPO = '/mnt/nfs/datasets/ogbn-papers100M'
+    DATA_REPO_NFS = '/mnt/nfs/datasets/ogbn-papers100M'
+    cache_dir = '/mnt/nfs/dgl_cached/ogbn-papers100M'
 
+class dgl_yelp_dataset:
+    GNAME = 'yelp'
+    DATA_REPO = '/mnt/nfs/datasets/yelp'
+    DATA_REPO_NFS = '/mnt/nfs/datasets/yelp'
+    cache_dir = '/mnt/nfs/ssd/dgl_cached/yelp'
 
-# class dgl_papers100M_dataset:
-#     GNAME = 'ogbn-papers100M'
-#     DATA_REPO = f'{constants.DGL_DATASET_DIR}/ogbn-papers100M'
-#     DATA_REPO_NFS = f'{constants.DGL_DATASET_DIR}/ogbn-papers100M'
-#     cache_dir = '/mnt/nfs/dgl_cached/ogbn-papers100M'
+class dgl_reddit_dataset:
+    GNAME = 'reddit'
+    DATA_REPO = '/mnt/nfs/datasets/reddit'
+    DATA_REPO_NFS = '/mnt/nfs/datasets/reddit'
+    cache_dir = '/mnt/nfs/ssd/dgl_cached/reddit'
 
+class dgl_amazon_dataset:
+    GNAME = 'amazon'
+    DATA_REPO = '/mnt/nfs/datasets/amazon'
+    DATA_REPO_NFS = '/mnt/nfs/datasets/amazon'
+    cache_dir = '/mnt/nfs/ssd/dgl_cached/amazon'
 
 class dgl_lognormal_dataset:
     GNAME = 'lognormal'
-    EDGE_FILE_PATH = f"{constants.NFS_ROOT}/lognormal/lognormal_edge.txt"
-    VERTEX_FILE_PATH = f"{constants.NFS_ROOT}/lognormal/lognormal_vertex.txt"
-    DATA_REPO = f'{constants.DGL_DATASET_DIR}/lognormal'
-    DATA_REPO_NFS = f'{constants.DGL_DATASET_DIR}/lognormal'
+    EDGE_FILE_PATH = "/mnt/nfs/ssd/lognormal/lognormal_edge.txt"
+    VERTEX_FILE_PATH = "/mnt/nfs/ssd/lognormal/lognormal_vertex.txt"
+    DATA_REPO = '/mnt/nfs/datasets/lognormal'
+    DATA_REPO_NFS = '/mnt/nfs/datasets/lognormal'
 
 
 class ali_products_dataset:
-    ALI_DATA_REPO = f'{constants.NFS_ROOT}/ogbn-products-ali'
+    ALI_DATA_REPO = '/mnt/nfs/ogbn-products-ali'
 
 
 class ali_arxiv_dataset:
-    ALI_DATA_REPO = f'{constants.NFS_ROOT}/ogbn-products-ali'
+    ALI_DATA_REPO = '/mnt/nfs/ogbn-arxiv-ali'
 
+class ali_yelp_dataset:
+    ALI_DATA_REPO = '/mnt/nfs/yelp-ali'
+
+class ali_reddit_dataset:
+    ALI_DATA_REPO = '/mnt/nfs/reddit-ali'
+
+class ali_amazon_dataset:
+    ALI_DATA_REPO = '/mnt/nfs/amazon-ali'
 
 class ali_papers100M_dataset:
-    ALI_DATA_REPO = f'{constants.NFS_ROOT}/ogbn-papers100M-ali'
+    ALI_DATA_REPO = '/mnt/nfs/ogbn-papers100M-ali'
 
 
 class lg_dataset_base(Constants):
@@ -210,19 +199,34 @@ class lg_dataset_base(Constants):
 
 
 class lg_products_dataset(lg_dataset_base):
-    save_dir = f"{constants.NFS_ROOT}/products"
+    save_dir = "/mnt/nfs/ssd/products"
     feature_shape = 100
     num_classes = 47
 
 
 class lg_arxiv_dataset(lg_dataset_base):
-    save_dir = f"{constants.NFS_ROOT}/arxiv"
+    save_dir = "/mnt/nfs/ssd/arxiv"
     feature_shape = 128
     num_classes = 40
 
+class lg_yelp_dataset(lg_dataset_base):
+    save_dir = "/mnt/nfs/ssd/yelp"
+    feature_shape = 300
+    num_classes = 100
+
+class lg_reddit_dataset(lg_dataset_base):
+    save_dir = "/mnt/nfs/ssd/reddit"
+    feature_shape = 602
+    num_classes = 41
+
+class lg_amazon_dataset(lg_dataset_base):
+    save_dir = "/mnt/nfs/ssd/amazon"
+    feature_shape = 300
+    num_classes = 22
+
 
 class lg_papers100M_dataset(lg_dataset_base):
-    save_dir = f"{constants.NFS_ROOT}/papers100M"
+    save_dir = "/mnt/nfs/papers100M"
     feature_shape = 128
     num_classes = 172
 
@@ -251,6 +255,27 @@ class papers100M_dataset(
     lg_papers100M_dataset,
     dgl_papers100M_dataset,
     ali_papers100M_dataset
+):
+    pass
+
+class yelp_dataset(
+    lg_yelp_dataset,
+    dgl_yelp_dataset,
+    ali_yelp_dataset
+):
+    pass
+
+class reddit_dataset(
+    lg_reddit_dataset,
+    dgl_reddit_dataset,
+    ali_reddit_dataset
+):
+    pass
+
+class amazon_dataset(
+    lg_amazon_dataset,
+    dgl_amazon_dataset,
+    ali_amazon_dataset
 ):
     pass
 
