@@ -41,9 +41,9 @@ class Dataset(object):
         self.args = args
 
     @timeit_factory()
-    def read_dataset(self):
+    def read_dataset(self, force=False):
         logs("Reading dataset".format())
-        self.read_node_dataset()
+        self.read_node_dataset(force)
 
     def update_masks(self):
         all_mask = torch.zeros(self.g.num_nodes(), dtype=torch.long)
@@ -102,9 +102,13 @@ class Dataset(object):
             'test': test_idx
         }
 
-    def read_node_dataset(self):
+    def get_cache_path(self):
         cache_path = os.path.join(self.args.cache_dir, "graph.bin")
-        if os.path.exists(cache_path):
+        return cache_path
+
+    def read_node_dataset(self, force=False):
+        cache_path = self.get_cache_path()
+        if os.path.exists(cache_path) and not force:
             logs("DGL cached loading")
             self.g = dgl.data.utils.load_graphs(cache_path, [0])[0][0]
         else:
@@ -112,6 +116,21 @@ class Dataset(object):
             logs("DGL fresh reading")
             if self.args.dataset == 'lognormal':
                 self.read_spark_graph()
+            if self.args.dataset in ['yelp', 'reddit']:
+                if self.args.dataset == 'yelp':
+                    DGLDatasetOBJ = dgl.data.YelpDataset
+                else:
+                    DGLDatasetOBJ = dgl.data.RedditDataset
+                self.dataset = DGLDatasetOBJ(raw_dir=self.args.cache_dir)
+                self.g = self.dataset[0]
+                self.split_idx = {}
+                for mask_name, split_name in zip(["train_mask", "val_mask", "test_mask"], constants.NTYPES):
+                    split = self.g.ndata[mask_name].nonzero(as_tuple=True)[0]
+                    self.split_idx[split_name] = split
+                if self.args.dataset == 'yelp':
+                    self.g.ndata['labels'] = self.g.ndata['label'].float()
+                else:
+                    self.g.ndata['labels'] = self.g.ndata['label']
             else:
                 # OGB datasets
                 logs("DGL Reading")
@@ -121,35 +140,45 @@ class Dataset(object):
                 self.g, self.labels = self.dataset[0]
                 self.g.ndata['labels'] = torch.nan_to_num(
                     self.labels[:, 0], 0).long()
-
-            if self.args.self_loop:
-                logs("Add self loop")
-                self.g = dgl.add_self_loop(self.g)
-
-            if self.args.undirected:
-                logs("Make bidirected")
-                self.g = dgl.to_bidirected(self.g, copy_ndata=True)
-
             if self.args.nine_one_random_split:
                 logs("Random split")
                 self.random_split(p=0.9)
             logs("Update masks")
             self.update_masks()
+            self.cache_save()
 
-            logs("Cache DGL")
-            Path(self.args.cache_dir).mkdir(parents=True, exist_ok=True)
-            dgl.data.utils.save_graphs(cache_path, [self.g])
+        if self.args.dataset == 'amazon':
+            self.split_idx = {}
+            for mask_name, split_name in zip(["train_mask", "valid_mask", "test_mask"], constants.NTYPES):
+                split = self.g.ndata[mask_name].nonzero(as_tuple=True)[0]
+                self.split_idx[split_name] = split
+
+        if self.args.undirected:
+            logs("Make bidirected")
+            self.g = dgl.to_bidirected(self.g, copy_ndata=True)
+        if self.args.self_loop:
+            logs("Add self loop")
+            self.g = dgl.add_self_loop(self.g)
+            
 
         self.feature_shape = self.g.ndata[constants.FEATURE].shape[1]
 
         logs("DGL get num classes")
         if self.args.dataset == "ogbn-papers100M":
             self.num_classes = self.args.num_classes
+        elif self.args.dataset in ["yelp"]:
+            self.num_classes = self.g.ndata[constants.LABELS].shape[1]
         else:
             self.num_classes = len(
                 torch.unique(
                     self.g.ndata[constants.LABELS][
                         0:self.g.number_of_nodes()]))
+
+    def cache_save(self):
+        cache_path = self.get_cache_path()
+        logs("Cache DGL")
+        Path(self.args.cache_dir).mkdir(parents=True, exist_ok=True)
+        dgl.data.utils.save_graphs(cache_path, [self.g])
 
     @timeit_factory()
     def dump(self):
@@ -272,6 +301,21 @@ class Dataset(object):
         node_table, train_table, valid_table, test_table, edge_table = \
             self.ali_paths()
 
+        for mode, save_dir in zip(
+                self.args.cats.NTYPES, [train_table, valid_table, test_table]):
+            with open(save_dir, 'w') as f:
+                f.write("id:int64" + "\t" + "weight:float" + "\n")
+                for node in tqdm(self.split_idx[mode].numpy()):
+                    f.write(str(node) + "\t" + str(1.0) + "\n")
+
+        srcdst_np = srcdst.numpy()
+        with open(edge_table, 'w') as f:
+            f.write("src_id: int64" + "\t"
+                    + "dst_id: int64" + "\t"
+                    + "weight: double" + "\n")
+            for arr in tqdm(srcdst_np):
+                f.write(str(arr[0]) + "\t" + str(arr[1]) + "\t" + "0.0" + "\n")
+        
         num_nodes = len(nodes)
         with open(node_table, 'w') as f:
             f.write(
@@ -288,17 +332,6 @@ class Dataset(object):
                         ':'.join(np.char.mod('%f', feat_arr))]) + '\n'
                 f.write(total_string)
 
-        for mode, save_dir in zip(
-                self.args.cats.NTYPES, [train_table, valid_table, test_table]):
-            with open(save_dir, 'w') as f:
-                f.write("id:int64" + "\t" + "weight:float" + "\n")
-                for node in tqdm(self.split_idx[mode].numpy()):
-                    f.write(str(node) + "\t" + str(1.0) + "\n")
+        
 
-        srcdst_np = srcdst.numpy()
-        with open(edge_table, 'w') as f:
-            f.write("src_id: int64" + "\t"
-                    + "dst_id: int64" + "\t"
-                    + "weight: double" + "\n")
-            for arr in tqdm(srcdst_np):
-                f.write(str(arr[0]) + "\t" + str(arr[1]) + "\t" + "0.0" + "\n")
+        

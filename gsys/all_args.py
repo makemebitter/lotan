@@ -22,6 +22,9 @@ from .constants import products_dataset
 from .constants import papers100M_dataset
 from .constants import arxiv_dataset
 from .constants import lognormal_dataset
+from .constants import yelp_dataset
+from .constants import reddit_dataset
+from .constants import amazon_dataset
 from .utils import logs
 import os
 
@@ -37,6 +40,14 @@ def get_all_args(no_stdout=False):
     return args
 
 
+def get_rank():
+    try:
+        rank = int(os.getenv('WORKER_NUMBER'))
+    except Exception:
+        rank = 0
+    return rank
+
+
 def get_args(pargs, no_stdout=False):
     if pargs.dataset == 'lognormal':
         args = lognormal_dataset()
@@ -44,13 +55,16 @@ def get_args(pargs, no_stdout=False):
         args = products_dataset()
     elif pargs.dataset == 'ogbn-papers100M':
         args = papers100M_dataset()
+    elif pargs.dataset == 'yelp':
+        args = yelp_dataset()
+    elif pargs.dataset == 'reddit':
+        args = reddit_dataset()
     elif pargs.dataset == 'ogbn-arxiv':
         args = arxiv_dataset()
+    elif pargs.dataset == 'amazon':
+        args = amazon_dataset()
     args = SimpleNamespace(**args._dict(), **pargs.__dict__)
-    try:
-        rank = int(os.getenv('WORKER_NUMBER'))
-    except Exception:
-        rank = 0
+    rank = get_rank()
     args.rank = rank
 
     if args.model == 'sage':

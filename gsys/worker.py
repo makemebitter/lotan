@@ -34,10 +34,14 @@ from .utils import logs
 from .utils import logsc
 
 from .nn import accuracy
+from .nn import cal_cm
+from .nn import f1
+from .nn import f1_micro_from_cm
 import torch
 import copy
 from collections import defaultdict
 from .nn import TORCH_DTYPE
+from .all_args import get_rank
 import gc
 DEBUG = False
 
@@ -187,19 +191,14 @@ class PreBatchedWorker(IPCBase):
     #     return json_objs
 
     def dist_init(self):
-        try:
-            rank = int(os.getenv('WORKER_NUMBER'))
-        except Exception:
-            rank = 0
-        if torch.cuda.is_available() and self.args.gpu:
+        rank = get_rank()
+        if torch.cuda.is_available() and self.args.gpu::
             backend = 'nccl'
         else:
             backend = 'gloo'
-
         logs(
             "DDP Initializing ... Rank: {}, World Size: {}".format(
                 rank, self.args.size))
-
         torch.distributed.init_process_group(
             backend=backend,
             init_method='tcp://{}:23456'.format(self.args.master),
@@ -316,9 +315,17 @@ class PreBatchedWorker(IPCBase):
 
         if self.args.dataset == 'lognormal':
             self.criterion = torch.nn.CrossEntropyLoss()
+        elif self.args.dataset == 'yelp':
+            # multi-label
+            self.criterion = torch.nn.BCEWithLogitsLoss(reduction='mean')
         else:
             self.criterion = torch.nn.CrossEntropyLoss(reduction='none')
-        self.log_softmax = torch.nn.LogSoftmax()
+        if self.args.dataset == 'yelp':
+            self.logit_fn = torch.nn.Sigmoid()
+            self.multi_label = True
+        else:
+            self.logit_fn = torch.nn.LogSoftmax()
+            self.multi_label = False
         if self.args.lbfgs:
             self.params = []
             for layer in self.models:
@@ -452,14 +459,25 @@ class PreBatchedWorker(IPCBase):
                             valid_result, valid_labels):
 
         # print(valid_result)
-        valid_result = self.log_softmax(valid_result)
-        acc_packet = accuracy(
-            valid_result,
-            valid_labels,
-            return_raw=True)[0]
-        print("Submodel: {}, Mode: {}, Acc: {}".format(
-            submodel_index, mode, acc_packet))
-        correct, bsize = acc_packet
+        valid_result = self.logit_fn(valid_result)
+
+        if self.multi_label:
+            valid_result = valid_result.cpu().numpy()
+
+            valid_labels = valid_labels.cpu().numpy()
+            f1_micro, f1_macro = f1(valid_result, valid_labels)
+            cm, bsize = cal_cm(valid_result, valid_labels)
+            print("Submodel: {}, Mode: {}, F1s: {}".format(
+                submodel_index, mode, (f1_micro, f1_macro)))
+            correct = cm
+        else:
+            acc_packet = accuracy(
+                valid_result,
+                valid_labels,
+                return_raw=True)[0]
+            print("Submodel: {}, Mode: {}, Acc: {}".format(
+                submodel_index, mode, acc_packet))
+            correct, bsize = acc_packet
         if mode == 'valid':
             self.valid_correct[submodel_index] += correct
             self.valid_total[submodel_index] += bsize
@@ -543,7 +561,7 @@ class PreBatchedWorker(IPCBase):
             train_mask,
             batch_indices, submodel_index=0):
         with logsc("FORWARD", elapsed_time=True):
-
+            
             loss = self.criterion(y, labels)
             # logs(
             #   "Batch raw loss: {}, sum: {}".format(
@@ -778,6 +796,11 @@ class PreBatchedWorker(IPCBase):
                         gen, model, outgoing_mq,
                         first_layer=True, count_batches=True, layer_index=j)
 
+                # save the first layer keys
+                # keys = list(self.first_layer_cache.keys())
+                # with open('/local/keys.pickle', 'wb') as fp:
+                #     pickle.dump(keys, fp)
+
                 logs("First layer of first epoch finished")
             else:
                 if j == self.num_models - 1:
@@ -829,20 +852,53 @@ class PreBatchedWorker(IPCBase):
             self.save_models()
 
         for k, v in self.valid_correct.items():
+            f1_arg = False
+            if self.multi_label:
+                valid_conf_mat = self.valid_correct[k]
+                self.valid_correct[k] = valid_conf_mat.tolist()
+                test_conf_mat = self.test_correct[k]
+                self.test_correct[k] = test_conf_mat.tolist()
 
-            valid_acc = self.valid_correct[k] / self.valid_total[k] \
-                if self.valid_total[k] != 0 else 0
-            test_acc = self.test_correct[k] / self.test_total[k] \
-                if self.test_total[k] != 0 else 0
+                valid_conf_mat_sum = valid_conf_mat.sum(axis=0)
+                test_conf_mat_sum = test_conf_mat.sum(axis=0)
+
+                valid_acc = f1_micro_from_cm(valid_conf_mat_sum)
+                test_acc = f1_micro_from_cm(test_conf_mat_sum)
+                f1_arg = True
+                log_local_test_acc(
+                    self.args.rank,
+                    self.epoch,
+                    "valid",
+                    valid_acc,
+                    self.valid_total[k], self.valid_correct[k], f1=f1_arg, submodel=k)
+                log_local_test_acc(
+                    self.args.rank,
+                    self.epoch,
+                    "test",
+                    test_acc,
+                    self.test_total[k], self.test_correct[k], f1=f1_arg, submodel=k)
+
+            else:
+                valid_acc = self.valid_correct[k] / self.valid_total[k] \
+                    if self.valid_total[k] != 0 else 0
+                test_acc = self.test_correct[k] / self.test_total[k] \
+                    if self.test_total[k] != 0 else 0
+                log_local_test_acc(
+                    self.args.rank,
+                    self.epoch,
+                    "valid",
+                    valid_acc,
+                    self.valid_total[k], submodel=k)
+                log_local_test_acc(
+                    self.args.rank,
+                    self.epoch,
+                    "test",
+                    test_acc,
+                    self.test_total[k], submodel=k)
 
             self.valid_acc_all[k] = valid_acc
             self.test_acc_all[k] = test_acc
-            log_local_test_acc(
-                self.args.rank,
-                self.epoch, "valid", valid_acc, self.valid_total[k], k)
-            log_local_test_acc(
-                self.args.rank,
-                self.epoch, "test", test_acc, self.test_total[k], k)
+            
         self.return_message = "SUCCESS"
 
         msg = self.serialize(messages.ALL_FINISHED)

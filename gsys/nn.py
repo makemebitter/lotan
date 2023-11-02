@@ -14,7 +14,37 @@
 # ==============================================================================
 
 import torch
+from sklearn.metrics import f1_score
+import numpy as np
+from sklearn.metrics import multilabel_confusion_matrix
 TORCH_DTYPE = torch.float32
+
+
+
+def unpack_conf_mat(conf_mat):
+    tn, fp, fn, tp = conf_mat.ravel()
+    return tn, fp, fn, tp
+
+def f1_micro_from_cm(cm):
+    tn, fp, fn, tp = unpack_conf_mat(cm)
+    return tp / (tp + 1 / 2 * (fp + fn))
+
+
+def cal_cm(y_pred, y_true):
+    conf_mat = multilabel_confusion_matrix(
+        y_true, y_pred)
+    return conf_mat, y_pred.shape[0]
+
+def f1(y_pred, y_true, multilabel=True):
+    # y_true = y_true.cpu().numpy()
+    # y_pred = y_pred.cpu().numpy()
+    if multilabel:
+        y_pred[y_pred > 0.5] = 1.0
+        y_pred[y_pred <= 0.5] = 0.0
+    else:
+        y_pred = np.argmax(y_pred, axis=1)
+    return f1_score(y_true, y_pred, average="micro"), \
+        f1_score(y_true, y_pred, average="macro")
 
 
 def accuracy(output, target, topk=(1, ), binary=False, return_raw=False):

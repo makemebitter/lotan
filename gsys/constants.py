@@ -161,26 +161,12 @@ dgl_products_dataset = dgl_class_factory(
 dgl_arxiv_dataset = dgl_class_factory("ogbn-arxiv", "dgl_arxiv_dataset")
 dgl_papers100M_dataset = dgl_class_factory(
     "ogbn-papers100M", "dgl_papers100M_dataset")
-
-# class dgl_products_dataset:
-#     GNAME = 'ogbn-products'
-#     DATA_REPO = f'{constants.DGL_DATASET_DIR}/ogbn-products'
-#     DATA_REPO_NFS = f'{constants.DGL_DATASET_DIR}/ogbn-products'
-#     cache_dir = f'{constants.DGL_CACHE_DIR}/ogbn-products'
-
-
-# class dgl_arxiv_dataset:
-#     GNAME = 'ogbn-arxiv'
-#     DATA_REPO = f'{constants.DGL_DATASET_DIR}/ogbn-arxiv'
-#     DATA_REPO_NFS = f'{constants.DGL_DATASET_DIR}/ogbn-arxiv'
-#     cache_dir = f'{constants.DGL_CACHE_DIR}/ogbn-arxiv'
-
-
-# class dgl_papers100M_dataset:
-#     GNAME = 'ogbn-papers100M'
-#     DATA_REPO = f'{constants.DGL_DATASET_DIR}/ogbn-papers100M'
-#     DATA_REPO_NFS = f'{constants.DGL_DATASET_DIR}/ogbn-papers100M'
-#     cache_dir = '/mnt/nfs/dgl_cached/ogbn-papers100M'
+dgl_yelp_dataset = dgl_class_factory(
+    "yelp", "dgl_yelp_dataset")
+dgl_reddit_dataset = dgl_class_factory(
+    "reddit", "dgl_reddit_dataset")
+dgl_amazon_dataset = dgl_class_factory(
+    "amazon", "dgl_amazon_dataset")
 
 
 class dgl_lognormal_dataset:
@@ -196,8 +182,16 @@ class ali_products_dataset:
 
 
 class ali_arxiv_dataset:
-    ALI_DATA_REPO = f'{constants.NFS_ROOT}/ogbn-products-ali'
+    ALI_DATA_REPO = f'{constants.NFS_ROOT}/ogbn-arxiv-ali'
 
+class ali_yelp_dataset:
+    ALI_DATA_REPO = f'{constants.NFS_ROOT}/yelp-ali'
+
+class ali_reddit_dataset:
+    ALI_DATA_REPO = f'{constants.NFS_ROOT}/reddit-ali'
+
+class ali_amazon_dataset:
+    ALI_DATA_REPO = f'{constants.NFS_ROOT}/amazon-ali'
 
 class ali_papers100M_dataset:
     ALI_DATA_REPO = f'{constants.NFS_ROOT}/ogbn-papers100M-ali'
@@ -219,6 +213,21 @@ class lg_arxiv_dataset(lg_dataset_base):
     save_dir = f"{constants.NFS_ROOT}/arxiv"
     feature_shape = 128
     num_classes = 40
+
+class lg_yelp_dataset(lg_dataset_base):
+    save_dir = f"{constants.NFS_ROOT}/yelp"
+    feature_shape = 300
+    num_classes = 100
+
+class lg_reddit_dataset(lg_dataset_base):
+    save_dir = f"{constants.NFS_ROOT}/reddit"
+    feature_shape = 602
+    num_classes = 41
+
+class lg_amazon_dataset(lg_dataset_base):
+    save_dir = f"{constants.NFS_ROOT}/amazon"
+    feature_shape = 300
+    num_classes = 22
 
 
 class lg_papers100M_dataset(lg_dataset_base):
@@ -251,6 +260,27 @@ class papers100M_dataset(
     lg_papers100M_dataset,
     dgl_papers100M_dataset,
     ali_papers100M_dataset
+):
+    pass
+
+class yelp_dataset(
+    lg_yelp_dataset,
+    dgl_yelp_dataset,
+    ali_yelp_dataset
+):
+    pass
+
+class reddit_dataset(
+    lg_reddit_dataset,
+    dgl_reddit_dataset,
+    ali_reddit_dataset
+):
+    pass
+
+class amazon_dataset(
+    lg_amazon_dataset,
+    dgl_amazon_dataset,
+    ali_amazon_dataset
 ):
     pass
 
