@@ -135,7 +135,7 @@ trait Constants {
     val SEED = 2021
     // ============================= Configs ==================================
     // directory to lotan root
-    val LOTAN_NFS_ROOT = "/mnt/nfs/gsys/"
+    val LOTAN_NFS_ROOT = "/mnt/nfs/lotan/"
     // modify this to be your spark master's ip
     val MASTER = "10.10.1.1"
     // Modify this to the list of IP addresses of your workers

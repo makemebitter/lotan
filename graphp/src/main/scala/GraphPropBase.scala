@@ -36,14 +36,16 @@ import graphgenerators.GraphGenerators
 import breeze.linalg.DenseVector
 import breeze.linalg.SparseVector
 
-object SendFinished extends Serializable {
+object SendFinished extends Serializable with Constants {
     import sys.process._
-    lazy val res = "/mnt/nfs/gsys/gsys/pipe.py --send_finished" !
+    lazy val cmd = DGL_PY + " -u " + LOTAN_NFS_ROOT + "gsys/pipe.py --send_finished"
+    lazy val res = cmd !
 }
 
-object SendTerm extends Serializable {
+object SendTerm extends Serializable with Constants {
     import sys.process._
-    lazy val res = "/mnt/nfs/gsys/gsys/pipe.py --send_term" !
+    lazy val cmd = DGL_PY + " -u " + LOTAN_NFS_ROOT + "gsys/pipe.py --send_term"
+    lazy val res = cmd !
 }
 
 class GraphPropBase(val pargs: mMap[Symbol, Int]) extends Constants {
