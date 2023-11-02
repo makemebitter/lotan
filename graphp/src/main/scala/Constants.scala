@@ -141,16 +141,16 @@ trait Constants {
     // Modify this to the list of IP addresses of your workers
     val hosts = Seq(
         "10.10.1.1",
-        "10.10.1.2"
     )
-    // the root of datasets, default value 
-    val DATA_NFS_ROOT = "/mnt/nfs/ssd/"
+    
     val HDFS_ADDRESS = "hdfs://" + MASTER + ":9000/"
     
     val master = "spark://" + MASTER + ":7077"
     val MEMORY = "120G"
     val DGL_PY = "/local/env_dgl/bin/python3"
     // ========================================================================
+    // the root of datasets, default value 
+    val DATA_NFS_ROOT = "/mnt/nfs/ssd/"
     val EDGE_FILE_PATH = DATA_NFS_ROOT + "lognormal/lognormal_edge.txt"
     val VERTEX_FILE_PATH = DATA_NFS_ROOT + "lognormal/lognormal_vertex.txt"
     val REVERSE_EDGE_FILE_PATH =
