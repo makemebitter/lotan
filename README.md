@@ -1,6 +1,6 @@
 # Lotan
 
-This repo contains the code and artifacts for our paper *Lotan: Bridging the Gap between GNNs and Scalable Graph Analytics Engines* published at VLDB 2023. Links: [Project Website](https://adalabucsd.github.io/cerebro.html) [Paper PDF](https://adalabucsd.github.io/papers/2023_Lotan_VLDB.pdf), [Tech Report](https://adalabucsd.github.io/papers/TR_2023_Lotan.pdf), [Blog Post](https://adalabucsd.github.io/research-blog/lotan.html).
+This repo contains the code and artifacts for our paper *Lotan: Bridging the Gap between GNNs and Scalable Graph Analytics Engines,* published at VLDB 2023. Links: [Project Website](https://adalabucsd.github.io/cerebro.html) [Paper PDF](https://adalabucsd.github.io/papers/2023_Lotan_VLDB.pdf), [Tech Report](https://adalabucsd.github.io/papers/TR_2023_Lotan.pdf), [Blog Post](https://adalabucsd.github.io/research-blog/lotan.html).
 
 ## Introduction
 
@@ -10,9 +10,9 @@ This repo contains the code and artifacts for our paper *Lotan: Bridging the Gap
   <img alt="B" src="./assets/arch_v3.png" width="45%">
 </p>
 
-Lotan is a scalable distributed full-graph Graph Neural Network training system with the amazing scalability and capability of handling models on huge graphs with large embedding sizes, running deep 16-layer models, and huge models with 140M+ parameters, all without crashing (see our paper for details). Our system is built on top of existing graph analytical and deep learning systems, in contrast to the vast majority of custom-built GNN systems. We employ graph systems for graph challenges and DL systems for DL challenges. This divide-and-conquer approach can combine the benefits from both worlds and provide the **decoupling of graph and neural networks**, analogous to the famous **decoupling of compute and storage**. The graph and NN components can now scale independently of each other, allowing for much greater GNN model design freedom.
+Lotan is a scalable distributed full-graph Graph Neural Network training system with good scalability and capability of handling models on massive graphs with large embedding sizes, running deep 16-layer models, and huge models with 140M+ parameters, all without crashing (see our paper for details). Our system is built on top of existing graph analytical and deep learning systems, in contrast to most custom-built GNN systems. We employ graph systems for graph challenges and DL systems for DL challenges. This divide-and-conquer approach can combine the benefits from both worlds and provide the **decoupling of graph and neural networks**, analogous to the famous **decoupling of compute and storage**. The graph and NN components can now scale independently of each other, allowing for much greater GNN model design freedom.
 
-This is the prototype we built based on Spark GraphX and PyTorch, with a feat of technical novelties and engineering efforts to make it as efficient and scalable as possible without modifying the codebase of either GraphX or PyTorch. Furthermore, such an architecture allows the user to run GNNs directly from their Graph DB, and the system can piggy pack all the useful functionalities such as fault tolerance, general data management capabilities, and transactions that a mature graph data system can offer. Check our paper to see the details of all the innovations, including Planner Optimization, GNN-centric Graph Partitioning, GNN Model Batching, and many more.
+This is the prototype we built based on Spark GraphX and PyTorch, with a feat of technical novelties and engineering efforts to make it as efficient and scalable as possible without modifying the codebase of either GraphX or PyTorch. Furthermore, such an architecture allows the user to run GNNs directly from their Graph DB, and the system can piggyback all the useful functionalities such as fault tolerance, general data management capabilities, and transactions that a mature graph data system can offer. Check our paper to see the details of the innovations, including Planner Optimization, GNN-centric Graph Partitioning, GNN Model Batching, and many more.
 
 
 ## Prerequisites
@@ -30,7 +30,7 @@ bash setup.sh
 # add dynamic library path to spark workers
 echo "export LD_LIBRARY_PATH=/usr/local/lib" | tee -a $SPARK_HOME/conf/spark-env.sh
 
-# install all prepherial pythonlibs
+# install all other pythonlibs
 pip install -r requirements_master.txt
 
 # pytorch, modify according to your cuda version
@@ -95,7 +95,7 @@ LOG_DIR="<log root directory, preferably on a NFS>/$TIMESTAMP"
 MODEL_DIR="<model checkpoint directory, preferably on a NFS>/$TIMESTAMP"
 ```
 
-Also modify the configurations located in `graphp/src/main/scala/Constants`:
+Also, modify the configurations located in `graphp/src/main/scala/Constants`:
 
 ```scala
 // directory to lotan root
@@ -165,7 +165,7 @@ export DGL_PY=python
 ```
 
 ### Set model hyperparameters
-Modify the GNN hyperparameter search grid if you want at `gsys/constants.py:65`; at the moment, it only supports optimizer in `{adam, adagrad}`, learning rate, and drop-out rate. The models implemented include GCN and GIN. More models can be implemented under the same framework, see `gsys/nn.py` for examples.
+Modify the GNN hyperparameter search grid if you want at `gsys/constants.py:65`; currently, it only supports optimizer in `{adam, adagrad}`, learning rate, and drop-out rate. The models implemented include GCN and GIN. More models can be implemented under the same framework; See `gsys/nn.py` for examples.
 
 
 ### Quick start: run model training
@@ -192,14 +192,14 @@ bash run_mb.sh <optional log root> <num of epochs to train> <num of workers> <mo
 For the <model-related configs>, refer to gsys/all_args.py.
 ```
 
-### Use your own dataset
+### Use your dataset
 
 You can run Lotan on your own dataset as long as you can convert it into the DGL format. For details, refer to `dgl_to_spark_data.py` and follow the code path there. It is fairly simple as you only need to plug the DGL object into the `read_node_dataset` in `gsys/data.py`.
 
 
 ### Terminate processes
 
-Sometimes the processes may not gracefully exit, to terminate all of them, run the following on every host:
+Sometimes, the processes may not gracefully exit. To terminate all of them, run the following on every host:
 
 ```bash
 pkill -f server_main.py; pkill -f pipe.py
