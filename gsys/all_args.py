@@ -42,7 +42,7 @@ def get_all_args(no_stdout=False):
 
 def get_rank():
     try:
-        rank = int(os.getenv('WORKER_NUMBER')) + 1
+        rank = int(os.getenv('WORKER_NUMBER'))
     except Exception:
         rank = 0
     return rank

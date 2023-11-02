@@ -231,7 +231,7 @@ class lg_amazon_dataset(lg_dataset_base):
 
 
 class lg_papers100M_dataset(lg_dataset_base):
-    save_dir = "{constants.NFS_ROOT}/papers100M"
+    save_dir = f"{constants.NFS_ROOT}/papers100M"
     feature_shape = 128
     num_classes = 172
 
