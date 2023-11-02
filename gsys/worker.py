@@ -192,7 +192,7 @@ class PreBatchedWorker(IPCBase):
 
     def dist_init(self):
         rank = get_rank()
-        if torch.cuda.is_available() and self.args.gpu::
+        if torch.cuda.is_available() and self.args.gpu:
             backend = 'nccl'
         else:
             backend = 'gloo'
