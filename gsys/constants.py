@@ -37,24 +37,27 @@ class Constants(object):
 class constants(Constants):
     MASKS = ['all_mask', 'train_mask', 'valid_mask', 'test_mask']
     NTYPES = ['train', 'valid', 'test']
-    HOSTS = '/mnt/nfs/all_host_list'
+    # HOSTS = '/mnt/nfs/all_host_list'
     FEATURE = 'feat'
     LABELS = 'labels'
-    PIPES_ROOT = '/mnt/ssd/tmp'
+    PIPES_ROOT = '/tmp'
     M2W = 'm2w'
     W2M = 'w2m'
     SEED = 2021
-    MACHINES = [
-        "10.0.1.{}:5699".format(i) for i in range(1, 5)
-    ]
+    DGL_DATASET_DIR = '/mnt/nfs/datasets'
+    NFS_ROOT = '/mnt/nfs/ssd'
+    DGL_CACHE_DIR = os.path.join(NFS_ROOT, 'dgl_cached')
+    # MACHINES = [
+    #     "10.0.1.{}:5699".format(i) for i in range(1, 5)
+    # ]
 
 
 class network_constants(constants):
-    ROUTER_ADDRESS = 'ipc:///mnt/ssd/tmp/router'
-    CONTROLLER_ADDRESS = 'ipc:///mnt/ssd/tmp/controller'
-    ROUTER_BACKEND_IPC = 'ipc:///mnt/ssd/tmp/backend'
-    ROUTER_BACKEND_IMQ_IPC = 'ipc:///mnt/ssd/tmp/backend_imq'
-    ROUTER_BACKEND_OMQ_IPC = 'ipc:///mnt/ssd/tmp/backend_omq'
+    ROUTER_ADDRESS = f'ipc://{constants.PIPES_ROOT}/router'
+    CONTROLLER_ADDRESS = f'ipc://{constants.PIPES_ROOT}/controller'
+    ROUTER_BACKEND_IPC = f'ipc://{constants.PIPES_ROOT}/backend'
+    ROUTER_BACKEND_IMQ_IPC = f'ipc://{constants.PIPES_ROOT}/backend_imq'
+    ROUTER_BACKEND_OMQ_IPC = f'ipc://{constants.PIPES_ROOT}/backend_omq'
     INCOMING_MQ_MAX_SIZE = 20
     OUTCOMING_MQ_MAX_SIZE = INCOMING_MQ_MAX_SIZE
     INCOMING_MQ_TIMEOUT = 2
