@@ -186,6 +186,9 @@ def get_main_parser():
         '--model', type=str, default='sage'
     )
     parser.add_argument(
+        '--master', type=str, default='master'
+    )
+    parser.add_argument(
         '--dataset', type=str, default='ogbn-products'
     )
     parser.add_argument(
