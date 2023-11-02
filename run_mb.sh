@@ -74,7 +74,7 @@ lr=0.01
 dropout=0.0
 optimizer="adam"
 
-$PARALLEL_SSH_ALL "cd /mnt/nfs/gsys/bin; bash run_server_main.sh \"$options --master ${master_ip} --model_num_layers ${num_layers} --dataset ${dataset} --model_lr ${lr} --model_epochs ${epochs} --save_model_root ${MODEL_DIR} --size ${SIZE} --model_dropout ${dropout} --model_optimizer ${optimizer}\" 2>&1 | tee -a ${LOG_DIR}/${EXP_NAME}/"'$WORKER_NAME.log' &
+$PARALLEL_SSH_ALL "cd $REPO_NFS_ROOT/bin; bash run_server_main.sh \"$options --master ${master_ip} --model_num_layers ${num_layers} --dataset ${dataset} --model_lr ${lr} --model_epochs ${epochs} --save_model_root ${MODEL_DIR} --size ${SIZE} --model_dropout ${dropout} --model_optimizer ${optimizer}\" 2>&1 | tee -a ${LOG_DIR}/${EXP_NAME}/"'$WORKER_NAME.log' &
 echo "Use the following command to monitor the DL Engine"
 echo "------------------------------------------------------------------------"
 echo "tail -f ${LOG_DIR}/${EXP_NAME}/"'$WORKER_NAME.log'
