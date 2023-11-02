@@ -41,6 +41,7 @@ from .nn import TORCH_DTYPE
 import gc
 DEBUG = False
 
+
 def batch_data_gen(incoming_mq, batch_size):
     # should be some termination criteria here
     while True:
@@ -187,13 +188,18 @@ class PreBatchedWorker(IPCBase):
 
     def dist_init(self):
         try:
-            rank = int(os.getenv('WORKER_NUMBER')) + 1
+            rank = int(os.getenv('WORKER_NUMBER'))
         except Exception:
             rank = 0
-        if self.args.gpu:
+        if torch.cuda.is_available() and self.args.gpu:
             backend = 'nccl'
         else:
             backend = 'gloo'
+
+        logs(
+            "DDP Initializing ... Rank: {}, World Size: {}".format(
+                rank, self.args.size))
+
         torch.distributed.init_process_group(
             backend=backend,
             init_method='tcp://{}:23456'.format(self.args.master),
@@ -368,7 +374,7 @@ class PreBatchedWorker(IPCBase):
 
         for layer_model in self.models:
             layer_model = torch.nn.parallel.DistributedDataParallel(
-                    layer_model)
+                layer_model)
             self.new_models.append(layer_model)
         self.models = self.new_models
 
@@ -644,7 +650,6 @@ class PreBatchedWorker(IPCBase):
                                 self.cal_loss_and_backward(
                                     result, labels, train_mask, batch_indices)
 
-
                         # validation accuracy
                         with logsc("VALIDATION", elapsed_time=True):
                             self.validation(
@@ -701,32 +706,34 @@ class PreBatchedWorker(IPCBase):
                 # torch.cuda.empty_cache()
                 # torch.cuda.synchronize()
 
-
     def save_models(self):
         other_states = {
             'epoch': self.epoch,
             'history': self.history
         }
-        
+
         for i, layer_model in enumerate(self.models):
-            name = os.path.join(self.args.save_model_root, "layer_model_{}.pt".format(i))
+            name = os.path.join(self.args.save_model_root,
+                                "layer_model_{}.pt".format(i))
             torch.save(layer_model.module.state_dict(), name)
 
         for i, optim in enumerate(self.optimizers):
-            name = os.path.join(self.args.save_model_root, "optimizer_{}.pt".format(i))
+            name = os.path.join(self.args.save_model_root,
+                                "optimizer_{}.pt".format(i))
             torch.save(optim.state_dict(), name)
 
         name = os.path.join(self.args.save_model_root, "other_states.pt")
         torch.save(other_states, name)
 
-
     def load_models(self):
         for i, layer_model in enumerate(self.models):
-            name = os.path.join(self.args.load_model, "layer_model_{}.pt".format(i))
+            name = os.path.join(self.args.load_model,
+                                "layer_model_{}.pt".format(i))
             layer_model.load_state_dict(torch.load(name))
 
         for i, optim in enumerate(self.optimizers):
-            name = os.path.join(self.args.load_model, "optimizer_{}.pt".format(i))
+            name = os.path.join(self.args.load_model,
+                                "optimizer_{}.pt".format(i))
             optim.load_state_dict(torch.load(name))
 
         name = os.path.join(self.args.load_model, "other_states.pt")
@@ -770,7 +777,6 @@ class PreBatchedWorker(IPCBase):
                     self.forward(
                         gen, model, outgoing_mq,
                         first_layer=True, count_batches=True, layer_index=j)
-
 
                 logs("First layer of first epoch finished")
             else:
@@ -822,7 +828,6 @@ class PreBatchedWorker(IPCBase):
             logs("Saving models")
             self.save_models()
 
-
         for k, v in self.valid_correct.items():
 
             valid_acc = self.valid_correct[k] / self.valid_total[k] \
@@ -861,7 +866,6 @@ class PreBatchedWorker(IPCBase):
         self.epoch += 1
         del self.layer_cache
         gc.collect()
-        
 
     def main(self, incoming_mq, outgoing_mq):
         self.device = self.get_device()
@@ -888,8 +892,6 @@ class PreBatchedWorker(IPCBase):
         self.history = defaultdict(dict)
         self.epoch = 0
         self.global_step = 0
-
-        
 
         if self.args.lbfgs:
             for j in range(self.args.cats.lbfgs_steps):

@@ -133,32 +133,45 @@ class EdgeProperty(
 trait Constants {
     val DEBUG = false
     val SEED = 2021
-    val EDGE_FILE_PATH = "/mnt/nfs/ssd/lognormal/lognormal_edge.txt"
-    val VERTEX_FILE_PATH = "/mnt/nfs/ssd/lognormal/lognormal_vertex.txt"
+    // ============================= Configs ==================================
+    // directory to lotan root
+    val LOTAN_NFS_ROOT = "/mnt/lotan/"
+    // modify this to be your spark master's ip
+    val MASTER = "10.10.1.1"
+    // Modify this to the list of IP addresses of your workers
+    val hosts = Seq(
+        MASTER
+    )
+    // the root of datasets, default value 
+    val DATA_NFS_ROOT = "/mnt/nfs/ssd/"
+    val HDFS_ADDRESS = "hdfs://" + MASTER + ":9000/"
+    
+    val master = "spark://" + MASTER + ":7077"
+    val MEMORY = "120G"
+    val DGL_PY = "/mnt/env_dgl/bin/python3.8"
+    // ========================================================================
+    val EDGE_FILE_PATH = DATA_NFS_ROOT + "lognormal/lognormal_edge.txt"
+    val VERTEX_FILE_PATH = DATA_NFS_ROOT + "lognormal/lognormal_vertex.txt"
     val REVERSE_EDGE_FILE_PATH =
-        "/mnt/nfs/ssd/lognormal/reverse_lognormal_edge.txt"
+        DATA_NFS_ROOT + "lognormal/reverse_lognormal_edge.txt"
     val REVERSE_VERTEX_FILE_PATH =
-        "/mnt/nfs/ssd/lognormal/reverse_lognormal_vertex.txt"
+        DATA_NFS_ROOT + "lognormal/reverse_lognormal_vertex.txt"
     val DATE_FORMAT = "YYYY-mm-dd HH:MM:SS"
     val META = "meta.csv"
     val EDGES = "edges.csv"
     val FEATURES = "features.csv"
+
+    type OptionMap = mMap[Symbol, Int]
     val datasetMap = mMap(
-        "products" -> "/mnt/nfs/ssd/products",
-        "processed" -> "/mnt/nfs/ssd/processed"
+        "products" -> (DATA_NFS_ROOT + "products"),
+        "processed" -> (DATA_NFS_ROOT + "processed")
     )
     val datasetBetterMap = mMap(
-        0 -> "/mnt/nfs/ssd/processed",
-        1 -> "/mnt/nfs/ssd/products",
-        2 -> "/mnt/nfs/ssd/arxiv",
-        3 -> "hdfs://master:9000/papers100M"
+        0 -> (DATA_NFS_ROOT + "processed"),
+        1 -> (DATA_NFS_ROOT + "products"),
+        2 -> (DATA_NFS_ROOT + "arxiv"),
+        3 -> (HDFS_ADDRESS + "papers100M")
     )
-    val hosts = Seq(
-        "10.10.1.1",
-        "10.10.1.2"
-    )
-    val master = "spark://10.10.1.1:7077"
-    type OptionMap = mMap[Symbol, Int]
 
 }
 trait Types {

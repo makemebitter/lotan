@@ -16,12 +16,10 @@
 set -e
 TIMESTAMP=${1:-`date "+%Y_%m_%d_%H_%M_%S"`}
 EPOCHS=${2:-200}
-SIZE=${3:-8}
+SIZE=${3:-1}
 OPTIONS=${4:-""}
 SECONDS=0
-HOSTS="/local/host_list"
-HOSTS_ALL="/local/all_host_list"
-master_ip="10.10.1.1"
+source constants.sh
 LOG_DIR="/mnt/nfs/logs/run_logs/$TIMESTAMP"
 MODEL_DIR="/mnt/nfs/models/$TIMESTAMP"
 export START=0
@@ -54,14 +52,14 @@ START_SPARK (){
     echo "Starting master"
     bash /usr/local/spark/sbin/start-master.sh && sleep 3
     echo "Starting workers"
-    $PARALLEL_SSH "bash /usr/local/spark/sbin/start-slave.sh $master_ip:7077" && sleep 6
+    $PARALLEL_SSH "bash /usr/local/spark/sbin/start-slave.sh $MASTER_IP:7077" && sleep 6
 }
 RESTART_SPARK () {
     # echo "Restarting master"
     # bash /usr/local/spark/sbin/stop-master.sh && sleep 3
     # bash /usr/local/spark/sbin/start-master.sh && sleep 6
     # echo "Restarting workers"
-    # $PARALLEL_SSH "bash /usr/local/spark/sbin/stop-slave.sh && bash /usr/local/spark/sbin/start-slave.sh $master_ip:7077" && sleep 15
+    # $PARALLEL_SSH "bash /usr/local/spark/sbin/stop-slave.sh && bash /usr/local/spark/sbin/start-slave.sh $MASTER_IP:7077" && sleep 15
     $SPARK_HOME/sbin/stop-all.sh
     $SPARK_HOME/sbin/start-all.sh
 }

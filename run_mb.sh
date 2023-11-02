@@ -63,9 +63,9 @@ $DGL_PY dgl_to_spark_data.py --self_loop --undirected --dataset ${dataset}
 # -------------------------------------MB-------------------------------------
 # --lotan_model_batching
 options="--io_type byte --hard_partition $OPTIONS"
-numEParts=80
-numVParts=80
-MASTER="master"
+numEParts=40
+numVParts=40
+# MASTER="master"
 # -----------------------------------server-----------------------------------
 export EXP_NAME="server"
 MAKE_CLIENT_LOG_DIR
@@ -74,7 +74,7 @@ lr=0.01
 dropout=0.0
 optimizer="adam"
 
-$PARALLEL_SSH_ALL "cd $REPO_NFS_ROOT/bin; bash run_server_main.sh \"$options --master ${master_ip} --model_num_layers ${num_layers} --dataset ${dataset} --model_lr ${lr} --model_epochs ${epochs} --save_model_root ${MODEL_DIR} --size ${SIZE} --model_dropout ${dropout} --model_optimizer ${optimizer}\" 2>&1 | tee -a ${LOG_DIR}/${EXP_NAME}/"'$WORKER_NAME.log' &
+$PARALLEL_SSH_ALL "export DGL_PY=$DGL_PY; cd $LOTAN_NFS_ROOT/bin; bash run_server_main.sh \"$options --master ${MASTER_IP} --model_num_layers ${num_layers} --dataset ${dataset} --model_lr ${lr} --model_epochs ${epochs} --save_model_root ${MODEL_DIR} --size ${SIZE} --model_dropout ${dropout} --model_optimizer ${optimizer}\" 2>&1 | tee -a ${LOG_DIR}/${EXP_NAME}/"'$WORKER_NAME.log' &
 echo "Use the following command to monitor the DL Engine"
 echo "------------------------------------------------------------------------"
 echo "tail -f ${LOG_DIR}/${EXP_NAME}/"'$WORKER_NAME.log'
@@ -84,23 +84,27 @@ echo "------------------------------------------------------------------------"
 
 # -----------------------------------graphx-----------------------------------
 numMachines=$SIZE
-CPUs=${spark_worker_cores}
+# CPUs=${spark_worker_cores}
 export EXP_NAME="graphx"
 # --drillDown 1
 
 SPARK_BASE_CMD="$CMD_STR --E2D ${E2D} --numVParts ${numVParts} --ipcType ${ipcType} --ioType ${ioType} --noReverseGraph ${noReverseGraph} --drillDown 1 --fillFeatures 1 --normalize ${normalize} --sparse ${sparse} --run 1 --numMachines ${numMachines} --numEParts ${numEParts} --numEpochs ${epochs} --dataset ${lotan_dataset} --miniBatchSize 500000 --savePlain 0 --aggPushDown ${aggPushDown} --numLayers ${num_layers}"
 # ----------------------------------------------------------------------------
 # ----------------------------hardPartition-----------------------------------
+
 set +e
 $HADOOP_HOME/bin/hdfs dfs -rm -r /edgesRev
 $HADOOP_HOME/bin/hdfs dfs -rm -r /edges
 $HADOOP_HOME/bin/hdfs dfs -rm -r /vertices
 set -e
+
 EXECUTE_CMD="$SPARK_BASE_CMD --hardPartition 1"
 RUN_EXP "$EXECUTE_CMD"
+echo "Dumped graph to HDFS"
 
 EXECUTE_CMD="$SPARK_BASE_CMD --hardPartitionRead 1"
 RUN_EXP "$EXECUTE_CMD"
+
 # ----------------------------------------------------------------------------
 set +e 
 $PARALLEL_SSH_ALL "pkill -f server_main.py; pkill -f pipe.py"

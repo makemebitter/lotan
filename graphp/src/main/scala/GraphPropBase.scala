@@ -36,14 +36,16 @@ import graphgenerators.GraphGenerators
 import breeze.linalg.DenseVector
 import breeze.linalg.SparseVector
 
-object SendFinished extends Serializable {
+object SendFinished extends Serializable with Constants {
     import sys.process._
-    lazy val res = "/mnt/nfs/gsys/gsys/pipe.py --send_finished" !
+    lazy val cmd = DGL_PY + " -u " + LOTAN_NFS_ROOT + "gsys/pipe.py --send_finished"
+    lazy val res = cmd !
 }
 
-object SendTerm extends Serializable {
+object SendTerm extends Serializable with Constants {
     import sys.process._
-    lazy val res = "/mnt/nfs/gsys/gsys/pipe.py --send_term" !
+    lazy val cmd = DGL_PY + " -u " + LOTAN_NFS_ROOT + "gsys/pipe.py --send_term"
+    lazy val res = cmd !
 }
 
 class GraphPropBase(val pargs: mMap[Symbol, Int]) extends Constants {
@@ -157,7 +159,6 @@ class GraphPropBase(val pargs: mMap[Symbol, Int]) extends Constants {
     }
 
     def createSpark(): Unit = {
-        val memory = "120G"
         var localityWait = if (pargs('hardPartition) == 1) {
             "0"
         } else {
@@ -173,8 +174,8 @@ class GraphPropBase(val pargs: mMap[Symbol, Int]) extends Constants {
             //     .config("spark.executor.instances", "4")
             // .config("spark.driver.memory", "2g")
             .config("spark.task.cpus", eachTCPUs)
-            .config("spark.driver.host", "master")
-            .config("spark.executor.memory", memory)
+            .config("spark.driver.host", MASTER)
+            .config("spark.executor.memory", MEMORY)
             .config("spark.memory.fraction", "0.6")
             .config("spark.network.timeout", "10000000s")
             .config("spark.locality.wait", localityWait)

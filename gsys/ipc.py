@@ -216,12 +216,13 @@ class Controller(IPCBase):
             msg = socket.recv_obj()
             if msg == messages.LAYER_FINISHED:
                 socket.send_obj(messages.CONTROLLER_ACKNOWLEDGE)
-                logs(msg)
+                logs(f"Controller logging: {msg}")
                 self.first_layer_finished = True
                 self.stage.value = 1
             elif msg == messages.TERM:
-                logs(msg)
+                logs(f"Controller logging: {msg}")
                 # shut down
+                logs("Controller logging: SHUTING DOWN")
                 self.event.clear()
                 break
             else:

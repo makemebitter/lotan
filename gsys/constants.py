@@ -14,6 +14,7 @@
 # ==============================================================================
 
 import itertools
+import os
 LARGE_INT = 1e10
 TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
@@ -36,24 +37,27 @@ class Constants(object):
 class constants(Constants):
     MASKS = ['all_mask', 'train_mask', 'valid_mask', 'test_mask']
     NTYPES = ['train', 'valid', 'test']
-    HOSTS = '/mnt/nfs/all_host_list'
+    # HOSTS = '/mnt/nfs/all_host_list'
     FEATURE = 'feat'
     LABELS = 'labels'
-    PIPES_ROOT = '/mnt/ssd/tmp'
+    PIPES_ROOT = '/tmp'
     M2W = 'm2w'
     W2M = 'w2m'
     SEED = 2021
-    MACHINES = [
-        "10.0.1.{}:5699".format(i) for i in range(1, 5)
-    ]
+    DGL_DATASET_DIR = '/mnt/nfs/datasets'
+    NFS_ROOT = '/mnt/nfs/ssd'
+    DGL_CACHE_DIR = os.path.join(NFS_ROOT, 'dgl_cached')
+    # MACHINES = [
+    #     "10.0.1.{}:5699".format(i) for i in range(1, 5)
+    # ]
 
 
 class network_constants(constants):
-    ROUTER_ADDRESS = 'ipc:///mnt/ssd/tmp/router'
-    CONTROLLER_ADDRESS = 'ipc:///mnt/ssd/tmp/controller'
-    ROUTER_BACKEND_IPC = 'ipc:///mnt/ssd/tmp/backend'
-    ROUTER_BACKEND_IMQ_IPC = 'ipc:///mnt/ssd/tmp/backend_imq'
-    ROUTER_BACKEND_OMQ_IPC = 'ipc:///mnt/ssd/tmp/backend_omq'
+    ROUTER_ADDRESS = f'ipc://{constants.PIPES_ROOT}/router'
+    CONTROLLER_ADDRESS = f'ipc://{constants.PIPES_ROOT}/controller'
+    ROUTER_BACKEND_IPC = f'ipc://{constants.PIPES_ROOT}/backend'
+    ROUTER_BACKEND_IMQ_IPC = f'ipc://{constants.PIPES_ROOT}/backend_imq'
+    ROUTER_BACKEND_OMQ_IPC = f'ipc://{constants.PIPES_ROOT}/backend_omq'
     INCOMING_MQ_MAX_SIZE = 20
     OUTCOMING_MQ_MAX_SIZE = INCOMING_MQ_MAX_SIZE
     INCOMING_MQ_TIMEOUT = 2
@@ -141,45 +145,62 @@ class gin_cats(gcn_cats):
     mlp_hidden = [128]
 
 
-class dgl_products_dataset:
-    GNAME = 'ogbn-products'
-    DATA_REPO = '/mnt/nfs/datasets/ogbn-products'
-    DATA_REPO_NFS = '/mnt/nfs/datasets/ogbn-products'
-    cache_dir = '/mnt/nfs/ssd/dgl_cached/ogbn-products'
+def dgl_class_factory(GNAME, name):
+    created_class = type(name, (object, ), {
+        "GNAME": GNAME,
+        "DATA_REPO": f'{constants.DGL_DATASET_DIR}/{GNAME}',
+        "DATA_REPO_NFS": f'{constants.DGL_DATASET_DIR}/{GNAME}',
+        "cache_dir": f'{constants.DGL_CACHE_DIR}/{GNAME}'
+    }
+    )
+    return created_class
 
 
-class dgl_arxiv_dataset:
-    GNAME = 'ogbn-arxiv'
-    DATA_REPO = '/mnt/nfs/datasets/ogbn-arxiv'
-    DATA_REPO_NFS = '/mnt/nfs/datasets/ogbn-arxiv'
-    cache_dir = '/mnt/nfs/ssd/dgl_cached/ogbn-arxiv'
+dgl_products_dataset = dgl_class_factory(
+    "ogbn-products", "dgl_products_dataset")
+dgl_arxiv_dataset = dgl_class_factory("ogbn-arxiv", "dgl_arxiv_dataset")
+dgl_papers100M_dataset = dgl_class_factory(
+    "ogbn-papers100M", "dgl_papers100M_dataset")
+
+# class dgl_products_dataset:
+#     GNAME = 'ogbn-products'
+#     DATA_REPO = f'{constants.DGL_DATASET_DIR}/ogbn-products'
+#     DATA_REPO_NFS = f'{constants.DGL_DATASET_DIR}/ogbn-products'
+#     cache_dir = f'{constants.DGL_CACHE_DIR}/ogbn-products'
 
 
-class dgl_papers100M_dataset:
-    GNAME = 'ogbn-papers100M'
-    DATA_REPO = '/mnt/nfs/datasets/ogbn-papers100M'
-    DATA_REPO_NFS = '/mnt/nfs/datasets/ogbn-papers100M'
-    cache_dir = '/mnt/nfs/dgl_cached/ogbn-papers100M'
+# class dgl_arxiv_dataset:
+#     GNAME = 'ogbn-arxiv'
+#     DATA_REPO = f'{constants.DGL_DATASET_DIR}/ogbn-arxiv'
+#     DATA_REPO_NFS = f'{constants.DGL_DATASET_DIR}/ogbn-arxiv'
+#     cache_dir = f'{constants.DGL_CACHE_DIR}/ogbn-arxiv'
+
+
+# class dgl_papers100M_dataset:
+#     GNAME = 'ogbn-papers100M'
+#     DATA_REPO = f'{constants.DGL_DATASET_DIR}/ogbn-papers100M'
+#     DATA_REPO_NFS = f'{constants.DGL_DATASET_DIR}/ogbn-papers100M'
+#     cache_dir = '/mnt/nfs/dgl_cached/ogbn-papers100M'
 
 
 class dgl_lognormal_dataset:
     GNAME = 'lognormal'
-    EDGE_FILE_PATH = "/mnt/nfs/ssd/lognormal/lognormal_edge.txt"
-    VERTEX_FILE_PATH = "/mnt/nfs/ssd/lognormal/lognormal_vertex.txt"
-    DATA_REPO = '/mnt/nfs/datasets/lognormal'
-    DATA_REPO_NFS = '/mnt/nfs/datasets/lognormal'
+    EDGE_FILE_PATH = f"{constants.NFS_ROOT}/lognormal/lognormal_edge.txt"
+    VERTEX_FILE_PATH = f"{constants.NFS_ROOT}/lognormal/lognormal_vertex.txt"
+    DATA_REPO = f'{constants.DGL_DATASET_DIR}/lognormal'
+    DATA_REPO_NFS = f'{constants.DGL_DATASET_DIR}/lognormal'
 
 
 class ali_products_dataset:
-    ALI_DATA_REPO = '/mnt/nfs/ogbn-products-ali'
+    ALI_DATA_REPO = f'{constants.NFS_ROOT}/ogbn-products-ali'
 
 
 class ali_arxiv_dataset:
-    ALI_DATA_REPO = '/mnt/nfs/ogbn-products-ali'
+    ALI_DATA_REPO = f'{constants.NFS_ROOT}/ogbn-products-ali'
 
 
 class ali_papers100M_dataset:
-    ALI_DATA_REPO = '/mnt/nfs/ogbn-papers100M-ali'
+    ALI_DATA_REPO = f'{constants.NFS_ROOT}/ogbn-papers100M-ali'
 
 
 class lg_dataset_base(Constants):
@@ -189,19 +210,19 @@ class lg_dataset_base(Constants):
 
 
 class lg_products_dataset(lg_dataset_base):
-    save_dir = "/mnt/nfs/ssd/products"
+    save_dir = f"{constants.NFS_ROOT}/products"
     feature_shape = 100
     num_classes = 47
 
 
 class lg_arxiv_dataset(lg_dataset_base):
-    save_dir = "/mnt/nfs/ssd/arxiv"
+    save_dir = f"{constants.NFS_ROOT}/arxiv"
     feature_shape = 128
     num_classes = 40
 
 
 class lg_papers100M_dataset(lg_dataset_base):
-    save_dir = "/mnt/nfs/papers100M"
+    save_dir = f"{constants.NFS_ROOT}/papers100M"
     feature_shape = 128
     num_classes = 172
 
