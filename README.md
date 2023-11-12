@@ -64,6 +64,10 @@ sdk install sbt
 Lotan requires each machine to be labeled with global variables; you need to run the following to give each host a permanent name and number:
 
 ```bash
+# On the master node, or if you have only one machine
+echo "WORKER_NUMBER=0" | sudo tee -a /etc/environment
+echo "WORKER_NAME=master" | sudo tee -a /etc/environment
+# On the worker nodes
 echo "WORKER_NUMBER=<number you give, eg: 1>" | sudo tee -a /etc/environment
 echo "WORKER_NAME=<name you give, eg: worker1>" | sudo tee -a /etc/environment
 source /etc/environment
