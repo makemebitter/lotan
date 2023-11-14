@@ -633,7 +633,7 @@ class PreBatchedWorker(IPCBase):
                     # always do a cache of the input, saved for backprop
 
                     self.layer_cache[layer_index][tuple(batch_indices)] = (
-                        H_u.detach().to('cpu'), V, U)
+                        H_u.detach().to('cpu').clone(), V, U)
                     # else:
                     #     self.layer_cache[layer_index][tuple(batch_indices)] = (
                     #         H_u.detach(), V, U)
