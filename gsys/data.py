@@ -206,14 +206,15 @@ class Dataset(object):
 
     @timeit_factory()
     def dump_spark(self):
-        if self.args.dataset == "ogbn-papers100M":
-            self.ori_save_dir = self.args.save_dir
-            self.ori_g = self.g
-            # self.khop_filter_dump(2)
-            self.khop_filter_dump(3)
-            # self.khop_filter_dump(4)
-        else:
-            self._dump_spark()
+        # FIXME khop update API uses with new OGB version
+        # if self.args.dataset == "ogbn-papers100M":
+        #     self.ori_save_dir = self.args.save_dir
+        #     self.ori_g = self.g
+        #     # self.khop_filter_dump(2)
+        #     self.khop_filter_dump(3)
+        #     # self.khop_filter_dump(4)
+        # else:
+        self._dump_spark()
 
     def _dump_spark(self):
         save_dir = self.args.save_dir
