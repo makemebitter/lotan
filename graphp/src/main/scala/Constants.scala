@@ -168,13 +168,13 @@ trait Constants {
         "processed" -> (DATA_NFS_ROOT + "processed")
     )
     val datasetBetterMap = mMap(
-        0 -> "/mnt/nfs/ssd/processed",
-        1 -> "/mnt/nfs/ssd/products",
-        2 -> "/mnt/nfs/ssd/arxiv",
-        3 -> "hdfs://master:9000/papers100M",
-        4 -> "/mnt/nfs/ssd/yelp",
-        5 -> "/mnt/nfs/ssd/reddit",
-        6 -> "/mnt/nfs/ssd/amazon"
+        0 -> (DATA_NFS_ROOT + "processed"),
+        1 -> (DATA_NFS_ROOT + "products"),
+        2 -> (DATA_NFS_ROOT + "arxiv"),
+        3 -> (DATA_NFS_ROOT + "papers100M"),
+        4 -> (DATA_NFS_ROOT + "yelp"),
+        5 -> (DATA_NFS_ROOT + "reddit"),
+        6 -> (DATA_NFS_ROOT + "amazon")
     )
 
 }
